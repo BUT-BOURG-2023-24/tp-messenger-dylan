@@ -1,14 +1,14 @@
 require("ts-node/register");
 import http from "http";
 import supertest from "supertest";
-import { Express } from "express";
+import { Application } from "express";
 import mongoose from "mongoose";
-import Database from "../database/Database";
+import { Database } from "../database/Database";
 import { makeApp } from "../app";
 
 interface SetupResult {
   server: http.Server;
-  app: Express;
+  app: Application;
 }
 
 async function setup(): Promise<SetupResult> {
