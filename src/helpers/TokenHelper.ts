@@ -17,7 +17,9 @@ export class TokenHelper {
   }
 
   public static generateUserToken(userId: string) {
-    const token = sign({ userId }, config.JWT_SECRET, { expiresIn: "1h" });
+    const token = sign({ sub: userId }, config.JWT_SECRET, {
+      expiresIn: config.JWT_EXPIRES_IN,
+    });
 
     return token;
   }

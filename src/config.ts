@@ -7,6 +7,7 @@ export default {
   DB_ADDRESS_TEST: process.env.DB_ADDRESS_TEST ?? "",
   PORT: process.env.PORT ?? 5000,
   JWT_SECRET: process.env.JWT_SECRET ?? "secret",
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? "1h",
 };
 
 /**
