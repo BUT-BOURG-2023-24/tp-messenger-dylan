@@ -75,16 +75,19 @@ export class ConversationController extends Controller {
   ): Promise<void> {
     const currentUser: IUser = this.getCurrentUser(request);
 
-    const conversationConcerned: IConversation =
+    const concernedConversation: IConversation =
       await this.getConvernedConversation(request);
 
-    this.checkIfCurrentUserIsParticipatant(currentUser, conversationConcerned);
+    await this.checkIfCurrentUserIsParticipant(
+      currentUser,
+      concernedConversation
+    );
 
-    await this.database.deleteConversation(conversationConcerned);
+    await this.database.deleteConversation(concernedConversation);
 
     response.status(200).send({
       conversation: {
-        _id: conversationConcerned.id,
+        _id: concernedConversation.id,
       },
     });
   }
@@ -95,10 +98,13 @@ export class ConversationController extends Controller {
   ): Promise<void> {
     const currentUser: IUser = this.getCurrentUser(request);
 
-    const conversationConcerned: IConversation =
+    const concernedConversation: IConversation =
       await this.getConvernedConversation(request);
 
-    this.checkIfCurrentUserIsParticipatant(currentUser, conversationConcerned);
+    await this.checkIfCurrentUserIsParticipant(
+      currentUser,
+      concernedConversation
+    );
 
     const messageIdToSee: string = request.body.messageId;
 
@@ -112,14 +118,14 @@ export class ConversationController extends Controller {
       );
 
     await this.database.setConversationSeenForUserAndMessage(
-      conversationConcerned,
+      concernedConversation,
       currentUser,
       messageToSee
     );
 
     response.status(200).send({
       conversation: {
-        _id: conversationConcerned.id,
+        _id: concernedConversation.id,
       },
     });
   }
@@ -130,10 +136,13 @@ export class ConversationController extends Controller {
   ): Promise<void> {
     const currentUser: IUser = this.getCurrentUser(request);
 
-    const conversationConcerned: IConversation =
+    const concernedConversation: IConversation =
       await this.getConvernedConversation(request);
 
-    this.checkIfCurrentUserIsParticipatant(currentUser, conversationConcerned);
+    await this.checkIfCurrentUserIsParticipant(
+      currentUser,
+      concernedConversation
+    );
 
     const messageReplyId: string | undefined = request.body.messageReplyId;
 
@@ -148,13 +157,13 @@ export class ConversationController extends Controller {
     });
 
     await this.database.addMessageToConversation(
-      conversationConcerned,
+      concernedConversation,
       newMessage
     );
 
     response.status(200).send({
       conversation: {
-        _id: conversationConcerned.id,
+        _id: concernedConversation.id,
       },
     });
   }
@@ -162,29 +171,32 @@ export class ConversationController extends Controller {
   private async getConvernedConversation(
     request: Request
   ): Promise<IConversation> {
-    const conversationConcernedId: string = request.params.conversation_id;
+    const concernedConversationId: string = request.params.conversation_id;
 
-    const conversationConcerned: IConversation | null =
-      await this.database.getConversationById(conversationConcernedId);
+    const concernedConversation: IConversation | null =
+      await this.database.getConversationById(concernedConversationId);
 
-    if (!conversationConcerned)
+    if (!concernedConversation)
       throw new Code404HttpError(
         "This conversation passed to the parameters doesn't exist"
       );
 
-    return conversationConcerned;
+    return concernedConversation;
   }
 
-  private checkIfCurrentUserIsParticipatant(
+  private async checkIfCurrentUserIsParticipant(
     currentUser: IUser,
-    conversationConcerned: IConversation
-  ): void {
+    concernedConversation: IConversation
+  ): Promise<void> {
     const currentUserIsParticipant =
-      conversationConcerned.participants.includes(currentUser.id);
+      await this.database.checkIfUserIsConversationParticipant(
+        currentUser,
+        concernedConversation
+      );
 
     if (!currentUserIsParticipant)
       throw new Code401HttpError(
-        "You cann't delete a conversation where you are not"
+        "You can't modify this conversation because you are not a participant of it"
       );
   }
 }

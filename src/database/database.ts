@@ -4,6 +4,7 @@ import { IMessage } from "./models/MessageModel";
 import { ReactionType } from "./models/ReactionModel";
 import { IUser, UserModel } from "./models/UserModel";
 import { MongooseID } from "../types";
+import { Code401HttpError } from "../error/HttpError";
 
 class Database {
   fromTest: boolean;
@@ -72,6 +73,19 @@ class Database {
     await conversation.save();
   }
 
+  public async checkIfUserIsConversationParticipant(
+    user: IUser,
+    conversation: IConversation
+  ): Promise<boolean> {
+    await conversation.populate("participants._id");
+
+    const userIsParticipant = conversation.participants.includes(user.id);
+
+    if (userIsParticipant) return true;
+
+    return false;
+  }
+
   public async addMessageToConversation(
     conversation: IConversation,
     message: IMessage
@@ -133,6 +147,15 @@ class Database {
 
   public getMessageById(messageId: MongooseID): Promise<IMessage | null> {
     return ConversationModel.findById(messageId);
+  }
+
+  public async checkIfUserIsMessageAuthor(
+    user: IUser,
+    message: IMessage
+  ): Promise<boolean> {
+    await message.from.populate("from._id");
+
+    return message.from.id === user.id;
   }
 }
 
