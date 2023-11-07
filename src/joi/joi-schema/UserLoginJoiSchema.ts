@@ -1,6 +1,6 @@
 import { object, string } from "joi";
 
-export const userLoginSchema = object({
+export const userLoginJoiSchema = object({
   username: string().min(3).required(),
-  password: string().min(1).required(),
+  password: string().required(),
 });
