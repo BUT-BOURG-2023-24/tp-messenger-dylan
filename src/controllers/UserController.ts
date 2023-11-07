@@ -19,6 +19,7 @@ export class UserController extends Controller {
       this.login
     );
     this.router.get("/online", checkJwtMiddleware, this.getOnlineUsers);
+    this.router.get("/all", checkJwtMiddleware, this.getAllUsers);
   }
 
   private async login(request: Request, response: Response): Promise<void> {
@@ -84,6 +85,23 @@ export class UserController extends Controller {
         return {
           _id: onlineUser.id,
           username: onlineUser.username,
+        };
+      }),
+    });
+  }
+
+  private async getAllUsers(
+    request: Request,
+    response: Response
+  ): Promise<void> {
+    const allUsers: Array<IUser> =
+      await request.app.locals.database.getAllUsers();
+
+    response.status(200).send({
+      users: allUsers.map((user) => {
+        return {
+          _id: user.id,
+          username: user.username,
         };
       }),
     });
