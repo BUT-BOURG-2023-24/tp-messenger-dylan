@@ -83,6 +83,7 @@ export class ConversationController extends Controller {
         return {
           _id: userConversation.id,
           title: userConversation.title,
+          messages: userConversation.messages,
         };
       }),
     });

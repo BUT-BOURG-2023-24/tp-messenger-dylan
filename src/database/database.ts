@@ -52,6 +52,10 @@ export class Database {
     return users;
   }
 
+  public getAllUsers(): Promise<Array<IUser>> {
+    return UserModel.find().exec();
+  }
+
   public async getConversationWithParticipants(
     conversationId: MongooseID
   ): Promise<IConversation | null> {
@@ -69,7 +73,7 @@ export class Database {
       participants: {
         _id: user._id,
       },
-    });
+    }).populate("messages");
   }
 
   public getConversationById(
