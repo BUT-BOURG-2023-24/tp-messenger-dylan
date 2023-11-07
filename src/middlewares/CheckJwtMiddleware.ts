@@ -6,6 +6,7 @@ import {
 } from "../error/HttpError";
 import { IUser } from "../database/models/UserModel";
 import { TokenHelper } from "../helpers/TokenHelper";
+import { JwtPayload } from "jsonwebtoken";
 
 export async function checkJwtMiddleware(
   request: Request,
@@ -17,7 +18,8 @@ export async function checkJwtMiddleware(
   try {
     if (!userToken) throw new Code401HttpError("You need a token");
 
-    let userTokenPayload = TokenHelper.decodeUserToken(userToken);
+    let userTokenPayload: string | JwtPayload =
+      TokenHelper.decodeUserToken(userToken);
 
     if (!userTokenPayload.sub || typeof userTokenPayload.sub !== "string")
       throw new Code400HttpError("The token contains an invalid user id");
