@@ -10,8 +10,7 @@ declare global {
   namespace Express {
     interface Locals {
       database: Database;
-      userId: MongooseID;
-      sockerController: SocketController;
+      socketController: SocketController;
     }
     interface Request {
       currentUser?: IUser;
