@@ -4,6 +4,9 @@ import { Server } from "socket.io";
 import { Database } from "./database/Database";
 import { SocketController } from "./socket/socketController";
 import { joiValidatorMiddleware } from "./middlewares/JoiValidatorMiddleware";
+import { UserController } from "./controllers/UserController";
+import { ConversationController } from "./controllers/ConversationController";
+import { MessageController } from "./controllers/MessageController";
 
 const app: Application = express();
 
@@ -17,7 +20,13 @@ function makeApp(database: Database) {
   const socketController = new SocketController(io, database);
 
   app.locals.database = database;
-  app.locals.sockerController = socketController;
+  app.locals.socketController = socketController;
+
+  new UserController(app);
+  new ConversationController(app);
+  new MessageController(app);
+
+  database.connect();
 
   return { app, server };
 }
