@@ -6,12 +6,18 @@ import { TokenHelper } from "../helpers/TokenHelper";
 import { checkJwtMiddleware } from "../middlewares/CheckJwtMiddleware";
 import { compare } from "bcrypt";
 import { Code401HttpError } from "../error/HttpError";
+import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
+import { userLoginJoiSchema } from "./joi-schema/UserLoginJoiSchema";
 
 export class UserController extends Controller {
   public constructor(app: Application) {
     super(app, "/users/");
 
-    this.router.post("/login", this.login);
+    this.router.post(
+      "/login",
+      joiValidatorMiddleware(userLoginJoiSchema),
+      this.login
+    );
     this.router.get("/online", checkJwtMiddleware, this.getOnlineUsers);
   }
 

@@ -8,6 +8,10 @@ import {
   IConversation,
 } from "../database/models/ConversationModel";
 import { IMessage, MessageModel } from "../database/models/MessageModel";
+import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
+import { conversationCreationJoiSchema } from "./joi-schema/ConversationCreationJoiSchema";
+import { seeConversationMessageJoiSchema } from "./joi-schema/SeeConversationMessageJoiSchema";
+import { newConversationMessageJoiSchema } from "./joi-schema/NewConversationMessageJoiSchema";
 
 export class ConversationController extends Controller {
   public constructor(app: Application) {
@@ -15,11 +19,23 @@ export class ConversationController extends Controller {
 
     this.router.use(checkJwtMiddleware);
 
-    this.router.post("/", this.createConversation);
+    this.router.post(
+      "/",
+      joiValidatorMiddleware(conversationCreationJoiSchema),
+      this.createConversation
+    );
     this.router.get("/", this.getUserConversations);
     this.router.delete("/:conversation_id", this.deleteConversation);
-    this.router.post("/see/:conversation_id", this.seeConversationMessage);
-    this.router.post("/:conversation_id", this.sendMessage);
+    this.router.post(
+      "/see/:conversation_id",
+      joiValidatorMiddleware(seeConversationMessageJoiSchema),
+      this.seeConversationMessage
+    );
+    this.router.post(
+      "/:conversation_id",
+      joiValidatorMiddleware(newConversationMessageJoiSchema),
+      this.sendMessage
+    );
   }
 
   private async createConversation(

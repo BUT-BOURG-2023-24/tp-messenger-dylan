@@ -10,6 +10,9 @@ import {
 } from "../error/HttpError";
 import { IConversation } from "../database/models/ConversationModel";
 import { ReactionType } from "../database/models/ReactionModel";
+import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
+import { newMessageContentJoiSchema } from "./joi-schema/NewMessageContentJoiSchema";
+import { messageReactionAddingJoiSchema } from "./joi-schema/MessageReactionAddingJoiSchema";
 
 export class MessageController extends Controller {
   public constructor(app: Application) {
@@ -17,8 +20,16 @@ export class MessageController extends Controller {
 
     this.router.use(checkJwtMiddleware);
 
-    this.router.put("/:message_id", this.updateMessage);
-    this.router.post("/:message_id", this.reactToMessage);
+    this.router.put(
+      "/:message_id",
+      joiValidatorMiddleware(newMessageContentJoiSchema),
+      this.updateMessage
+    );
+    this.router.post(
+      "/:message_id",
+      joiValidatorMiddleware(messageReactionAddingJoiSchema),
+      this.reactToMessage
+    );
     this.router.delete("/:message_id", this.deleteMessage);
   }
 
