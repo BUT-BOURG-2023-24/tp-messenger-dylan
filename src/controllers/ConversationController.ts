@@ -11,22 +11,22 @@ import { IMessage, MessageModel } from "../database/models/MessageModel";
 
 export class ConversationController extends Controller {
   public constructor(app: Application) {
-    super(app, "conversations");
+    super(app, "/conversations/");
 
     this.router.use(checkJwtMiddleware);
 
-    this.router.post("", this.createConversation);
-    this.router.get("", this.getUserConversations);
-    this.router.delete(":conversation_id", this.deleteConversation);
-    this.router.post("see/:conversation_id", this.seeConversationMessage);
-    this.router.post(":conversation_id", this.sendMessage);
+    this.router.post("/", this.createConversation);
+    this.router.get("/", this.getUserConversations);
+    this.router.delete("/:conversation_id", this.deleteConversation);
+    this.router.post("/see/:conversation_id", this.seeConversationMessage);
+    this.router.post("/:conversation_id", this.sendMessage);
   }
 
   private async createConversation(
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
     const concernedUsersIds: Array<string> = request.body.concernedUsersIds;
 
@@ -40,7 +40,7 @@ export class ConversationController extends Controller {
       seen: new Array(),
     });
 
-    await this.database.createConversation(newConversation);
+    await request.app.locals.database.createConversation(newConversation);
 
     response.status(200).send({
       conversation: {
@@ -53,11 +53,10 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
-    const userConversations = await this.database.getAllConversationsForUser(
-      currentUser
-    );
+    const userConversations: Array<IConversation> =
+      await request.app.locals.database.getAllConversationsForUser(currentUser);
 
     response.status(200).send({
       conversations: userConversations.map((userConversation) => {
@@ -73,17 +72,18 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
     const concernedConversation: IConversation =
-      await this.getConvernedConversation(request);
+      await ConversationController.getConvernedConversation(request);
 
-    await this.checkIfCurrentUserIsParticipant(
+    await ConversationController.checkIfCurrentUserIsParticipant(
+      request,
       currentUser,
       concernedConversation
     );
 
-    await this.database.deleteConversation(concernedConversation);
+    await request.app.locals.database.deleteConversation(concernedConversation);
 
     response.status(200).send({
       conversation: {
@@ -96,28 +96,28 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
     const concernedConversation: IConversation =
-      await this.getConvernedConversation(request);
+      await ConversationController.getConvernedConversation(request);
 
-    await this.checkIfCurrentUserIsParticipant(
+    await ConversationController.checkIfCurrentUserIsParticipant(
+      request,
       currentUser,
       concernedConversation
     );
 
     const messageIdToSee: string = request.body.messageId;
 
-    const messageToSee: IMessage | null = await this.database.getMessageById(
-      messageIdToSee
-    );
+    const messageToSee: IMessage | null =
+      await request.app.locals.database.getMessageById(messageIdToSee);
 
     if (!messageToSee)
       throw new Code404HttpError(
         "This message passed to the body doesn't exist"
       );
 
-    await this.database.setConversationSeenForUserAndMessage(
+    await request.app.locals.database.setConversationSeenForUserAndMessage(
       concernedConversation,
       currentUser,
       messageToSee
@@ -134,12 +134,13 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
     const concernedConversation: IConversation =
-      await this.getConvernedConversation(request);
+      await ConversationController.getConvernedConversation(request);
 
-    await this.checkIfCurrentUserIsParticipant(
+    await ConversationController.checkIfCurrentUserIsParticipant(
+      request,
       currentUser,
       concernedConversation
     );
@@ -156,7 +157,7 @@ export class ConversationController extends Controller {
       reactions: new Array(),
     });
 
-    await this.database.addMessageToConversation(
+    await request.app.locals.database.addMessageToConversation(
       concernedConversation,
       newMessage
     );
@@ -168,13 +169,15 @@ export class ConversationController extends Controller {
     });
   }
 
-  private async getConvernedConversation(
+  private static async getConvernedConversation(
     request: Request
   ): Promise<IConversation> {
     const concernedConversationId: string = request.params.conversation_id;
 
     const concernedConversation: IConversation | null =
-      await this.database.getConversationById(concernedConversationId);
+      await request.app.locals.database.getConversationById(
+        concernedConversationId
+      );
 
     if (!concernedConversation)
       throw new Code404HttpError(
@@ -184,12 +187,13 @@ export class ConversationController extends Controller {
     return concernedConversation;
   }
 
-  private async checkIfCurrentUserIsParticipant(
+  private static async checkIfCurrentUserIsParticipant(
+    request: Request,
     currentUser: IUser,
     concernedConversation: IConversation
   ): Promise<void> {
     const currentUserIsParticipant =
-      await this.database.checkIfUserIsConversationParticipant(
+      await request.app.locals.database.checkIfUserIsConversationParticipant(
         currentUser,
         concernedConversation
       );

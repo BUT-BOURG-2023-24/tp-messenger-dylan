@@ -13,28 +13,36 @@ import { ReactionType } from "../database/models/ReactionModel";
 
 export class MessageController extends Controller {
   public constructor(app: Application) {
-    super(app, "messages");
+    super(app, "/messages/");
 
     this.router.use(checkJwtMiddleware);
 
-    this.router.put("message_id", this.updateMessage);
-    this.router.post("message_id", this.reactToMessage);
-    this.router.delete("message_id", this.deleteMessage);
+    this.router.put("/:message_id", this.updateMessage);
+    this.router.post("/:message_id", this.reactToMessage);
+    this.router.delete("/:message_id", this.deleteMessage);
   }
 
   private async updateMessage(
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
-    const concernedMessage: IMessage = await this.getConcernedMessage(request);
+    const concernedMessage: IMessage =
+      await MessageController.getConcernedMessage(request);
 
-    await this.checkIfCurrentUserIsAuthor(currentUser, concernedMessage);
+    await MessageController.checkIfCurrentUserIsAuthor(
+      request,
+      currentUser,
+      concernedMessage
+    );
 
     const newMessageContent: string = request.body.newMessageContent;
 
-    await this.database.editMessage(concernedMessage, newMessageContent);
+    await request.app.locals.database.editMessage(
+      concernedMessage,
+      newMessageContent
+    );
 
     response.status(200).send({
       message: {
@@ -47,24 +55,28 @@ export class MessageController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
-    const concernedMessage: IMessage = await this.getConcernedMessage(request);
+    const concernedMessage: IMessage =
+      await MessageController.getConcernedMessage(request);
 
     const convernedMessageConversation: IConversation | null =
-      await this.database.getConversationById(concernedMessage.conversationId);
+      await request.app.locals.database.getConversationById(
+        concernedMessage.conversationId
+      );
 
     if (!convernedMessageConversation)
       throw new Code500HttpError("The message hasn't a conversation parent");
 
-    await this.checkIfCurrentUserIsParticipant(
+    await MessageController.checkIfCurrentUserIsParticipant(
+      request,
       currentUser,
       convernedMessageConversation
     );
 
     const reactionTypeToAdd: string = request.body.reaction;
 
-    await this.database.reactToMessage(
+    await request.app.locals.database.reactToMessage(
       concernedMessage,
       currentUser,
       reactionTypeToAdd as ReactionType
@@ -81,13 +93,18 @@ export class MessageController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
+    const currentUser: IUser = Controller.getCurrentUser(request);
 
-    const concernedMessage: IMessage = await this.getConcernedMessage(request);
+    const concernedMessage: IMessage =
+      await MessageController.getConcernedMessage(request);
 
-    await this.checkIfCurrentUserIsAuthor(currentUser, concernedMessage);
+    await MessageController.checkIfCurrentUserIsAuthor(
+      request,
+      currentUser,
+      concernedMessage
+    );
 
-    await this.database.deleteMessage(concernedMessage);
+    await request.app.locals.database.deleteMessage(concernedMessage);
 
     response.status(200).send({
       message: {
@@ -96,11 +113,13 @@ export class MessageController extends Controller {
     });
   }
 
-  private async getConcernedMessage(request: Request): Promise<IMessage> {
-    const concernedMessageId: string = request.params.conversation_id;
+  private static async getConcernedMessage(
+    request: Request
+  ): Promise<IMessage> {
+    const concernedMessageId: string = request.params.message_id;
 
     const concernedMessage: IMessage | null =
-      await this.database.getMessageById(concernedMessageId);
+      await request.app.locals.database.getMessageById(concernedMessageId);
 
     if (!concernedMessage)
       throw new Code404HttpError(
@@ -110,14 +129,16 @@ export class MessageController extends Controller {
     return concernedMessage;
   }
 
-  private async checkIfCurrentUserIsAuthor(
+  private static async checkIfCurrentUserIsAuthor(
+    request: Request,
     currentUser: IUser,
     concernedMessage: IMessage
   ): Promise<void> {
-    const currentUserIsAuthor = await this.database.checkIfUserIsMessageAuthor(
-      currentUser,
-      concernedMessage
-    );
+    const currentUserIsAuthor =
+      await request.app.locals.database.checkIfUserIsMessageAuthor(
+        currentUser,
+        concernedMessage
+      );
 
     if (!currentUserIsAuthor)
       throw new Code401HttpError(
@@ -125,12 +146,13 @@ export class MessageController extends Controller {
       );
   }
 
-  private async checkIfCurrentUserIsParticipant(
+  private static async checkIfCurrentUserIsParticipant(
+    request: Request,
     currentUser: IUser,
     concernedConversation: IConversation
   ): Promise<void> {
     const currentUserIsParticipant =
-      await this.database.checkIfUserIsConversationParticipant(
+      await request.app.locals.database.checkIfUserIsConversationParticipant(
         currentUser,
         concernedConversation
       );

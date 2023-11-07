@@ -4,21 +4,30 @@ import { IUser, UserModel } from "../database/models/UserModel";
 import { pickRandom } from "../pictures";
 import { TokenHelper } from "../helpers/TokenHelper";
 import { checkJwtMiddleware } from "../middlewares/CheckJwtMiddleware";
+import { compare } from "bcrypt";
+import { Code401HttpError } from "../error/HttpError";
 
 export class UserController extends Controller {
   public constructor(app: Application) {
-    super(app, "users");
+    super(app, "/users/");
 
-    this.router.post("login", this.login);
-    this.router.get("online", checkJwtMiddleware, this.getOnlineUsers);
+    this.router.post("/login", this.login);
+    this.router.get("/online", checkJwtMiddleware, this.getOnlineUsers);
   }
 
   private async login(request: Request, response: Response): Promise<void> {
-    const currentUser: IUser | null = await this.database.getUserByName(
-      request.body.username
-    );
+    const currentUser: IUser | null =
+      await request.app.locals.database.getUserByName(request.body.username);
 
     if (currentUser) {
+      const passwordIsValid: boolean = await compare(
+        request.body.password,
+        currentUser.password
+      );
+
+      if (!passwordIsValid)
+        throw new Code401HttpError("The password is invalid");
+
       const userToken: string = TokenHelper.generateUserToken(currentUser.id);
 
       response.status(200).send({
@@ -35,7 +44,7 @@ export class UserController extends Controller {
         profilePicId: pickRandom(),
       });
 
-      await this.database.createUser(newUser);
+      await request.app.locals.database.createUser(newUser);
 
       const userToken: string = TokenHelper.generateUserToken(newUser.id);
 
@@ -50,20 +59,19 @@ export class UserController extends Controller {
   }
 
   private async getOnlineUsers(
-    _request: Request,
+    request: Request,
     response: Response
   ): Promise<void> {
     const onlineUserIds: Array<string> = new Array();
 
-    for (const entry of this.socketController.socketIdUserIdMap) {
+    for (const entry of request.app.locals.socketController.socketIdUserIdMap) {
       const userId: string = entry[0];
 
       onlineUserIds.push(userId);
     }
 
-    const onlineUsers: Array<IUser> = await this.database.getUsersByIds(
-      onlineUserIds
-    );
+    const onlineUsers: Array<IUser> =
+      await request.app.locals.database.getUsersByIds(onlineUserIds);
 
     response.status(200).send({
       users: onlineUsers.map((onlineUser) => {
