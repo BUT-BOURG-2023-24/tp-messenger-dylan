@@ -1,6 +1,6 @@
-import { object, string } from "joi";
+import joi from "joi";
 import { reactionTypeValidator } from "../../database/models/ReactionModel";
 
-export const messageReactionAddingJoiSchema = object({
-  reaction: string().valid(reactionTypeValidator.values),
+export const messageReactionAddingJoiSchema = joi.object({
+  reaction: joi.string().valid(...reactionTypeValidator.values),
 });

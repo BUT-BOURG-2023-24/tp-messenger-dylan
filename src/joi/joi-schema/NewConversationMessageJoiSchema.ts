@@ -1,6 +1,6 @@
-import { object, string } from "joi";
+import joi from "joi";
 
-export const newConversationMessageJoiSchema = object({
-  content: string().required,
-  messageReplyId: string(),
+export const newConversationMessageJoiSchema = joi.object({
+  content: joi.string().required,
+  messageReplyId: joi.string(),
 });

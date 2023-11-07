@@ -1,4 +1,4 @@
-import * as joi from "joi";
+import joi from "joi";
 import { Request } from "express";
 import { userLoginJoiSchema } from "./joi-schema/UserLoginJoiSchema";
 import { conversationCreationJoiSchema } from "./joi-schema/ConversationCreationJoiSchema";

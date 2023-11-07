@@ -1,5 +1,5 @@
-import { array, object, string } from "joi";
+import joi from "joi";
 
-export const conversationCreationJoiSchema = object({
-  concernedUsersIds: array().items(string()).min(1).required,
+export const conversationCreationJoiSchema = joi.object({
+  concernedUsersIds: joi.array().items(joi.string()).min(1).required,
 });

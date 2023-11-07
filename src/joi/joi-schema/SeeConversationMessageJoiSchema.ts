@@ -1,5 +1,5 @@
-import { object, string } from "joi";
+import joi from "joi";
 
-export const seeConversationMessageJoiSchema = object({
-  messageId: string().required,
+export const seeConversationMessageJoiSchema = joi.object({
+  messageId: joi.string().required,
 });
