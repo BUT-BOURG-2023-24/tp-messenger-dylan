@@ -1,23 +1,29 @@
-import bcrypt from "bcrypt";
+import { hash } from "bcrypt";
 import { ConversationModel, IConversation } from "./models/ConversationModel";
-import { IMessage } from "./models/MessageModel";
+import { IMessage, MessageModel } from "./models/MessageModel";
 import { ReactionType } from "./models/ReactionModel";
 import { IUser, UserModel } from "./models/UserModel";
 import { MongooseID } from "../types";
+import { connect } from "mongoose";
+import config from "../config";
 
-class Database {
-  fromTest: boolean;
+export class Database {
+  public constructor(public readonly fromTest: boolean) {}
 
-  constructor(fromTest: boolean) {
-    this.fromTest = fromTest;
-  }
+  public async connect() {
+    const databaseAddress = this.fromTest
+      ? config.DB_ADDRESS_TEST
+      : config.DB_ADDRESS;
 
-  async connect() {
-    // config.DB_ADDRESS contient l'adresse de la BDD
+    await connect(`mongodb://${databaseAddress}/${config.DB_NAME}`, {
+      authSource: "admin",
+      user: "messenger_user",
+      pass: "12345",
+    });
   }
 
   public async createUser(user: IUser): Promise<void> {
-    const hashedPassword = await bcrypt.hash(user.password, 5);
+    const hashedPassword: string = await hash(user.password, 5);
 
     user.password = hashedPassword;
 
@@ -59,7 +65,11 @@ class Database {
   public getAllConversationsForUser(
     user: IUser
   ): Promise<Array<IConversation>> {
-    return ConversationModel.find({ "participants._id": user.id });
+    return ConversationModel.find({
+      participants: {
+        _id: user._id,
+      },
+    });
   }
 
   public getConversationById(
@@ -76,9 +86,12 @@ class Database {
     user: IUser,
     conversation: IConversation
   ): Promise<boolean> {
-    await conversation.populate("participants._id");
+    await conversation.populate("participants");
 
-    const userIsParticipant = conversation.participants.includes(user.id);
+    const userIsParticipant =
+      conversation.participants.findIndex((participant) => {
+        return participant.id === user.id;
+      }) >= 0;
 
     if (userIsParticipant) return true;
 
@@ -92,6 +105,10 @@ class Database {
     message.conversationId = conversation.id;
 
     await message.save();
+
+    conversation.messages.push(message);
+
+    await conversation.save();
   }
 
   public async setConversationSeenForUserAndMessage(
@@ -145,18 +162,15 @@ class Database {
   }
 
   public getMessageById(messageId: MongooseID): Promise<IMessage | null> {
-    return ConversationModel.findById(messageId);
+    return MessageModel.findById(messageId);
   }
 
   public async checkIfUserIsMessageAuthor(
     user: IUser,
     message: IMessage
   ): Promise<boolean> {
-    await message.from.populate("from._id");
+    await message.populate("from");
 
     return message.from.id === user.id;
   }
 }
-
-export default Database;
-export type { Database };
