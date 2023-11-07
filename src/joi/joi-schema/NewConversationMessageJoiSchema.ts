@@ -1,4 +1,4 @@
-import { array, object, string } from "joi";
+import { object, string } from "joi";
 
 export const newConversationMessageJoiSchema = object({
   content: string().required,
