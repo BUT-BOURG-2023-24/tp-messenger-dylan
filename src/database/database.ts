@@ -4,7 +4,6 @@ import { IMessage } from "./models/MessageModel";
 import { ReactionType } from "./models/ReactionModel";
 import { IUser, UserModel } from "./models/UserModel";
 import { MongooseID } from "../types";
-import { Code401HttpError } from "../error/HttpError";
 
 class Database {
   fromTest: boolean;
