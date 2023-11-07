@@ -37,11 +37,24 @@ export class MessageController extends Controller {
       concernedMessage
     );
 
+    const convernedMessageConversation: IConversation | null =
+      await request.app.locals.database.getConversationById(
+        concernedMessage.conversationId
+      );
+
+    if (!convernedMessageConversation)
+      throw new Code500HttpError("The message hasn't a conversation parent");
+
     const newMessageContent: string = request.body.newMessageContent;
 
     await request.app.locals.database.editMessage(
       concernedMessage,
       newMessageContent
+    );
+
+    request.app.locals.socketController.sendMessageCreationEvent(
+      convernedMessageConversation,
+      concernedMessage
     );
 
     response.status(200).send({
@@ -82,6 +95,11 @@ export class MessageController extends Controller {
       reactionTypeToAdd as ReactionType
     );
 
+    request.app.locals.socketController.sendMessageReactionAddingEvent(
+      convernedMessageConversation,
+      concernedMessage
+    );
+
     response.status(200).send({
       message: {
         _id: concernedMessage.id,
@@ -104,7 +122,20 @@ export class MessageController extends Controller {
       concernedMessage
     );
 
+    const convernedMessageConversation: IConversation | null =
+      await request.app.locals.database.getConversationById(
+        concernedMessage.conversationId
+      );
+
+    if (!convernedMessageConversation)
+      throw new Code500HttpError("The message hasn't a conversation parent");
+
     await request.app.locals.database.deleteMessage(concernedMessage);
+
+    request.app.locals.socketController.sendMessageReactionAddingEvent(
+      convernedMessageConversation,
+      concernedMessage
+    );
 
     response.status(200).send({
       message: {

@@ -3,6 +3,7 @@ import { Server, Socket } from "socket.io";
 import { TokenHelper } from "../helpers/TokenHelper";
 import { IUser } from "../database/models/UserModel";
 import { IConversation } from "../database/models/ConversationModel";
+import { IMessage } from "../database/models/MessageModel";
 
 export class SocketController {
   /*
@@ -135,6 +136,50 @@ export class SocketController {
     this.io.to(conversation.id).emit("@conversationSeen", {
       conversation: {
         _id: conversation.id,
+      },
+    });
+  }
+
+  public sendMessageCreationEvent(
+    conversation: IConversation,
+    message: IMessage
+  ): void {
+    this.io.to(conversation.id).emit("@newMessage", {
+      message: {
+        _id: message.id,
+      },
+    });
+  }
+
+  public sendMessageEditingEvent(
+    conversation: IConversation,
+    message: IMessage
+  ): void {
+    this.io.to(conversation.id).emit("@messageEdited", {
+      message: {
+        _id: message.id,
+      },
+    });
+  }
+
+  public sendMessageReactionAddingEvent(
+    conversation: IConversation,
+    message: IMessage
+  ): void {
+    this.io.to(conversation.id).emit("@reactionAdded", {
+      message: {
+        _id: message.id,
+      },
+    });
+  }
+
+  public sendMessageDeletingEvent(
+    conversation: IConversation,
+    message: IMessage
+  ): void {
+    this.io.to(conversation.id).emit("@messageDeleted", {
+      message: {
+        _id: message.id,
       },
     });
   }

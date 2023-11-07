@@ -174,6 +174,11 @@ export class ConversationController extends Controller {
       newMessage
     );
 
+    request.app.locals.socketController.sendMessageCreationEvent(
+      concernedConversation,
+      newMessage
+    );
+
     response.status(200).send({
       conversation: {
         _id: concernedConversation.id,
