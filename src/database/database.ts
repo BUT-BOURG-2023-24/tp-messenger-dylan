@@ -16,14 +16,12 @@ class Database {
     // config.DB_ADDRESS contient l'adresse de la BDD
   }
 
-  public async createUser(user: IUser): Promise<IUser> {
+  public async createUser(user: IUser): Promise<void> {
     const hashedPassword = await bcrypt.hash(user.password, 5);
 
     user.password = hashedPassword;
 
     await user.save();
-
-    return user;
   }
 
   public async getUserByName(username: string): Promise<IUser | null> {
