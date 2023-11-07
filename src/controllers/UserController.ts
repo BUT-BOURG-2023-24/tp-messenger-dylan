@@ -50,11 +50,9 @@ export class UserController extends Controller {
   }
 
   private async getOnlineUsers(
-    request: Request,
+    _request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = this.getCurrentUser(request);
-
     const onlineUserIds: Array<string> = new Array();
 
     for (const entry of this.socketController.socketIdUserIdMap) {
