@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { IUser } from "../Models/UserModel";
+import { IUser } from "./UserModel";
 
 export enum ReactionType {
   HAPPY = "HAPPY",
