@@ -3,8 +3,9 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 export default {
-  DB_ADDRESS: process.env.DB_ADDRESS ?? "",
+  DB_ADDRESS: process.env.DB_ADDRESS ?? "localhost:27017",
   DB_ADDRESS_TEST: process.env.DB_ADDRESS_TEST ?? "",
+  DB_NAME: process.env.DB_NAME ?? "messenger",
   PORT: process.env.PORT ?? 5000,
   JWT_SECRET: process.env.JWT_SECRET ?? "secret",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? "1h",
