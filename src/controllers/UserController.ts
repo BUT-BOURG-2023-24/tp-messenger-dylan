@@ -3,18 +3,17 @@ import { Controller } from "./Controller";
 import { IUser, UserModel } from "../database/models/UserModel";
 import { pickRandom } from "../pictures";
 import { TokenHelper } from "../helpers/TokenHelper";
-import { Code500HttpError } from "../error/HttpError";
 import { checkJwtMiddleware } from "../middlewares/CheckJwtMiddleware";
 
 export class UserController extends Controller {
   public constructor(app: Application) {
-    super(app, "/users/");
+    super(app, "users");
 
-    this.router.post("/login", this.login);
-    this.router.get("/online", checkJwtMiddleware, this.getOnlineUsers);
+    this.router.post("login", this.login);
+    this.router.get("online", checkJwtMiddleware, this.getOnlineUsers);
   }
 
-  async login(request: Request, response: Response): Promise<void> {
+  private async login(request: Request, response: Response): Promise<void> {
     const currentUser: IUser | null = await this.database.getUserByName(
       request.body.username
     );
@@ -36,13 +35,13 @@ export class UserController extends Controller {
         profilePicId: pickRandom(),
       });
 
-      const createdUser = await this.database.createUser(newUser);
+      await this.database.createUser(newUser);
 
-      const userToken: string = TokenHelper.generateUserToken(createdUser.id);
+      const userToken: string = TokenHelper.generateUserToken(newUser.id);
 
       response.status(200).send({
         user: {
-          _id: createdUser.id,
+          _id: newUser.id,
         },
         token: userToken,
         isNewUser: true,
@@ -50,11 +49,11 @@ export class UserController extends Controller {
     }
   }
 
-  async getOnlineUsers(request: Request, response: Response): Promise<void> {
-    const currentUser: IUser | undefined = request.currentUser;
-
-    if (!currentUser)
-      throw new Code500HttpError("The CheckJwtMiddleware doesn't work");
+  private async getOnlineUsers(
+    request: Request,
+    response: Response
+  ): Promise<void> {
+    const currentUser: IUser = this.getCurrentUser(request);
 
     const onlineUserIds: Array<string> = new Array();
 
