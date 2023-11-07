@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { Database } from "./database/database";
+import { Database } from "./database/Database";
 import { SocketController } from "./socket/socketController";
 import { ConversationController } from "./database/Mongo/Controllers/conversationController";
 import { IUser } from "./database/models/UserModel";

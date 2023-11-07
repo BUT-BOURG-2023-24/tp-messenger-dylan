@@ -3,21 +3,20 @@ import http from "http";
 import supertest from "supertest";
 import { Express } from "express";
 import mongoose from "mongoose";
-import Database from "../database/database";
+import Database from "../database/Database";
 import { makeApp } from "../app";
 
 interface SetupResult {
-	server: http.Server,
-	app: Express,
+  server: http.Server;
+  app: Express;
 }
 
-async function setup(): Promise<SetupResult> 
-{
-	let database = new Database(true);
+async function setup(): Promise<SetupResult> {
+  let database = new Database(true);
 
-	await database.connect();
+  await database.connect();
 
-	/*
+  /*
 		On veut supprimer toutes les collections de la base de données de test
 		avant de commencer les tests.
 
@@ -28,20 +27,20 @@ async function setup(): Promise<SetupResult>
 		await collection.deleteMany({});
 	*/
 
-	/*
+  /*
 		Nous voulons créer au moins 2 utilisateurs pour pouvoir 
 		créer une conversation a 2 participants. 
 
 		On peut faire appel aux fonctions de la BDD pour créer 2 utilisateurs.
 	*/
 
-	let { app, server } = makeApp(database);
+  let { app, server } = makeApp(database);
 
-	let res = await supertest(app)
-		.post("/users/login")
-		.send({ username: "test", password: "testpwd" });
+  let res = await supertest(app)
+    .post("/users/login")
+    .send({ username: "test", password: "testpwd" });
 
-	/*
+  /*
 		Pour se faciliter la tâche, nous allons également connecter directement
 		un utilisateur pour les tests. 
 
@@ -51,18 +50,17 @@ async function setup(): Promise<SetupResult>
 		Il faudra retourner ces valeurs là, avec l'app & le server. 
 	*/
 
-	// let userToken: string = token;
-	// let user: IUser = user;
+  // let userToken: string = token;
+  // let user: IUser = user;
 
-	return {
-		app,
-		server,
-	};
+  return {
+    app,
+    server,
+  };
 }
 
-async function teardown()
-{
-	await mongoose.disconnect();
+async function teardown() {
+  await mongoose.disconnect();
 }
 
 export { setup, teardown };
