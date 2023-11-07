@@ -4,6 +4,8 @@ import { userLoginJoiSchema } from "./joi-schema/UserLoginJoiSchema";
 import { conversationCreationJoiSchema } from "./joi-schema/ConversationCreationJoiSchema";
 import { seeConversationMessageJoiSchema } from "./joi-schema/SeeConversationMessageJoiSchema";
 import { newConversationMessageJoiSchema } from "./joi-schema/NewConversationMessageJoiSchema";
+import { newMessageContentJoiSchema } from "./joi-schema/NewMessageContentJoiSchema";
+import { messageReactionAddingJoiSchema } from "./joi-schema/MessageReactionAddingJoiSchema";
 
 interface JoiRequestValidatorResponse {
   error?: string;
@@ -36,6 +38,16 @@ class JoiRequestValidator {
       route: "/conversations/:conversation_id",
       method: "POST",
       validatorSchema: newConversationMessageJoiSchema,
+    },
+    {
+      route: "/messages/:message_id",
+      method: "PUT",
+      validatorSchema: newMessageContentJoiSchema,
+    },
+    {
+      route: "/messages/:message_id",
+      method: "POST",
+      validatorSchema: messageReactionAddingJoiSchema,
     },
   ];
 
