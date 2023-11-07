@@ -1,11 +1,9 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { MongooseID } from "../../../types";
+import { MongooseID } from "../../types";
 import { IUser } from "./UserModel";
 import { IReaction, ReactionSchema } from "./ReactionModel";
 
 export interface IMessage extends Document {
-  //A COMPLETER
-  _id: MongooseID;
   conversationId: MongooseID;
   from: IUser;
   replyTo: IUser;
@@ -17,7 +15,6 @@ export interface IMessage extends Document {
 }
 
 export const messageSchema: Schema<IMessage> = new Schema<IMessage>({
-  //A COMPLETER
   conversationId: {
     type: Schema.Types.ObjectId,
     ref: "Conversation",

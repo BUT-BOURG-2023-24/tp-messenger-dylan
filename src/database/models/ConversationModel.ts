@@ -1,11 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { MongooseID } from "../../../types";
 import { IMessage } from "./MessageModel";
 import { IUser } from "./UserModel";
 
 export interface IConversation extends Document {
-  //A COMPLETER
-  _id: MongooseID;
   title: string;
   lastUpdate: Date;
   participants: Array<IUser>;
@@ -18,7 +15,6 @@ export interface IConversation extends Document {
 
 export const conversationSchema: Schema<IConversation> =
   new Schema<IConversation>({
-    //A COMPLETER
     title: {
       type: String,
       required: true,
