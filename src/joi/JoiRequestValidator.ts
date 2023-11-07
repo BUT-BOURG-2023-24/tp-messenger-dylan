@@ -1,6 +1,9 @@
 import * as joi from "joi";
 import { Request } from "express";
-import { userLoginSchema } from "./joi-schema/UserLoginJoiSchema";
+import { userLoginJoiSchema } from "./joi-schema/UserLoginJoiSchema";
+import { conversationCreationJoiSchema } from "./joi-schema/ConversationCreationJoiSchema";
+import { seeConversationMessageJoiSchema } from "./joi-schema/SeeConversationMessageJoiSchema";
+import { newConversationMessageJoiSchema } from "./joi-schema/NewConversationMessageJoiSchema";
 
 interface JoiRequestValidatorResponse {
   error?: string;
@@ -14,16 +17,25 @@ interface JoiRouteValidator {
 
 class JoiRequestValidator {
   validators: JoiRouteValidator[] = [
-    // EXEMPLE
-    // {
-    // 	route: "/conversations/:id",
-    // 	method: "POST",
-    // 	validatorSchema: bodyFormat,
-    // }
     {
       route: "/users/login",
       method: "POST",
-      validatorSchema: userLoginSchema,
+      validatorSchema: userLoginJoiSchema,
+    },
+    {
+      route: "/conversations",
+      method: "POST",
+      validatorSchema: conversationCreationJoiSchema,
+    },
+    {
+      route: "/conversations/see/:conversation_id",
+      method: "POST",
+      validatorSchema: seeConversationMessageJoiSchema,
+    },
+    {
+      route: "/conversations/:conversation_id",
+      method: "POST",
+      validatorSchema: newConversationMessageJoiSchema,
     },
   ];
 
