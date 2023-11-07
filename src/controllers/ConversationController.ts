@@ -42,6 +42,10 @@ export class ConversationController extends Controller {
 
     await request.app.locals.database.createConversation(newConversation);
 
+    request.app.locals.socketController.sendConversationCreationEvent(
+      newConversation
+    );
+
     response.status(200).send({
       conversation: {
         _id: newConversation.id,
@@ -85,6 +89,10 @@ export class ConversationController extends Controller {
 
     await request.app.locals.database.deleteConversation(concernedConversation);
 
+    request.app.locals.socketController.sendConversationDeletingEvent(
+      concernedConversation
+    );
+
     response.status(200).send({
       conversation: {
         _id: concernedConversation.id,
@@ -121,6 +129,10 @@ export class ConversationController extends Controller {
       concernedConversation,
       currentUser,
       messageToSee
+    );
+
+    request.app.locals.socketController.sendConversationSeenEvent(
+      concernedConversation
     );
 
     response.status(200).send({

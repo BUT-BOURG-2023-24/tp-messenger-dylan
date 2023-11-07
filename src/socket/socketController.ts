@@ -20,20 +20,19 @@ export class SocketController {
     this.listenRoomChanged();
   }
 
-  connect() {
+  private connect(): void {
     this.io.on("connection", async (connectedSocket: Socket) => {
-      const currentUser = await this.getSocketUser(connectedSocket);
+      const currentUser: IUser | undefined = await this.getSocketUser(
+        connectedSocket
+      );
 
       if (!currentUser) return;
 
-      this.linkSocketIdUserId(connectedSocket, currentUser.id);
+      await this.handleConnection(connectedSocket, currentUser);
 
-      const userConversations: Array<IConversation> =
-        await this.database.getAllConversationsForUser(currentUser);
-
-      for (const conversation of userConversations) {
-        connectedSocket.join(conversation.id);
-      }
+      connectedSocket.on("disconnect", () => {
+        this.handleDeconnection(connectedSocket, currentUser);
+      });
 
       // Récupérer les infos voulu depuis les extra headers.
       // socket.handshake.headers contient ce que vous voulez.
@@ -52,6 +51,33 @@ export class SocketController {
 					Le paramètre roomName doit absolument être de type string,
 					si vous mettez un type number, cela ne fonctionnera pas.
 			*/
+    });
+  }
+
+  private async handleConnection(
+    connectedSocket: Socket,
+    currentUser: IUser
+  ): Promise<void> {
+    this.linkSocketIdUserId(connectedSocket, currentUser.id);
+
+    const userConversations: Array<IConversation> =
+      await this.database.getAllConversationsForUser(currentUser);
+
+    for (const conversation of userConversations) {
+      connectedSocket.join(conversation.id);
+    }
+
+    connectedSocket.broadcast.emit("@onConnected", {
+      userId: currentUser.id,
+    });
+  }
+
+  private async handleDeconnection(
+    connectedSocket: Socket,
+    currentUser: IUser
+  ): Promise<void> {
+    connectedSocket.broadcast.emit("@onDisconnected", {
+      userId: currentUser.id,
     });
   }
 
@@ -87,6 +113,30 @@ export class SocketController {
     );
 
     return currentUser ?? undefined;
+  }
+
+  public sendConversationCreationEvent(conversation: IConversation): void {
+    this.io.to(conversation.id).emit("@newConversation", {
+      conversation: {
+        _id: conversation.id,
+      },
+    });
+  }
+
+  public sendConversationDeletingEvent(conversation: IConversation): void {
+    this.io.to(conversation.id).emit("@conversationDeleted", {
+      conversation: {
+        _id: conversation.id,
+      },
+    });
+  }
+
+  public sendConversationSeenEvent(conversation: IConversation): void {
+    this.io.to(conversation.id).emit("@conversationSeen", {
+      conversation: {
+        _id: conversation.id,
+      },
+    });
   }
 
   // Cette fonction vous sert juste de debug.
