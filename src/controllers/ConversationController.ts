@@ -2,7 +2,7 @@ import { Application, Request, Response } from "express";
 import { Controller } from "./Controller";
 import { IUser } from "../database/models/UserModel";
 import { checkJwtMiddleware } from "../middlewares/CheckJwtMiddleware";
-import { Code404HttpError } from "../error/HttpError";
+import { Code400HttpError, Code404HttpError } from "../error/HttpError";
 import {
   ConversationModel,
   IConversation,
@@ -13,6 +13,7 @@ import { conversationCreationJoiSchema } from "./joi-schema/ConversationCreation
 import { seeConversationMessageJoiSchema } from "./joi-schema/SeeConversationMessageJoiSchema";
 import { newConversationMessageJoiSchema } from "./joi-schema/NewConversationMessageJoiSchema";
 import { RequestDataHelper } from "../helpers/RequestDataHelper";
+import { isValidObjectId } from "mongoose";
 
 export class ConversationController extends Controller {
   public constructor(app: Application) {
@@ -51,6 +52,19 @@ export class ConversationController extends Controller {
     const concernedUsersIds: Array<string> = request.body.concernedUsersIds;
 
     concernedUsersIds.push(currentUser.id);
+
+    for (const concernedUserId of concernedUsersIds) {
+      const concernedUserIdIsValid: boolean = isValidObjectId(concernedUserId);
+
+      if (!concernedUserIdIsValid)
+        throw new Code400HttpError("A provided id is not a correct id");
+
+      const concernedUser: IUser | null =
+        await request.app.locals.database.getUserById(concernedUserId);
+
+      if (!concernedUser)
+        throw new Code400HttpError("A provided user doesn't exist");
+    }
 
     const newConversation: IConversation = new ConversationModel({
       title: new Date().toLocaleString(),
@@ -136,11 +150,16 @@ export class ConversationController extends Controller {
 
     const messageIdToSee: string = request.body.messageId;
 
+    const messageIdToSeeIsValid: boolean = isValidObjectId(messageIdToSee);
+
+    if (!messageIdToSeeIsValid)
+      throw new Code400HttpError("The message id is not valid");
+
     const messageToSee: IMessage | null =
       await request.app.locals.database.getMessageById(messageIdToSee);
 
     if (!messageToSee)
-      throw new Code404HttpError(
+      throw new Code400HttpError(
         "This message passed to the body doesn't exist"
       );
 
@@ -199,8 +218,8 @@ export class ConversationController extends Controller {
     );
 
     response.status(200).send({
-      conversation: {
-        _id: concernedConversation.id,
+      message: {
+        _id: newMessage.id,
       },
     });
   }

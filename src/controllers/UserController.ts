@@ -4,7 +4,7 @@ import { IUser, UserModel } from "../database/models/UserModel";
 import { pickRandom } from "../pictures";
 import { TokenHelper } from "../helpers/TokenHelper";
 import { compare } from "bcrypt";
-import { Code401HttpError } from "../error/HttpError";
+import { Code400HttpError, Code401HttpError } from "../error/HttpError";
 import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
 import { userLoginJoiSchema } from "./joi-schema/UserLoginJoiSchema";
 
@@ -32,7 +32,7 @@ export class UserController extends Controller {
       );
 
       if (!passwordIsValid)
-        throw new Code401HttpError("The password is invalid");
+        throw new Code400HttpError("The password is invalid");
 
       const userToken: string = TokenHelper.generateUserToken(currentUser.id);
 
@@ -80,12 +80,7 @@ export class UserController extends Controller {
       await request.app.locals.database.getUsersByIds(onlineUserIds);
 
     response.status(200).send({
-      users: onlineUsers.map((onlineUser) => {
-        return {
-          _id: onlineUser.id,
-          username: onlineUser.username,
-        };
-      }),
+      users: onlineUsers,
     });
   }
 

@@ -1,12 +1,14 @@
 import { Request } from "express";
 import { IUser } from "../database/models/UserModel";
 import {
+  Code400HttpError,
   Code401HttpError,
   Code404HttpError,
   Code500HttpError,
 } from "../error/HttpError";
 import { IConversation } from "../database/models/ConversationModel";
 import { IMessage } from "../database/models/MessageModel";
+import { isValidObjectId } from "mongoose";
 
 export class RequestDataHelper {
   public static getCurrentUser(request: Request): IUser {
@@ -22,6 +24,13 @@ export class RequestDataHelper {
     request: Request
   ): Promise<IConversation> {
     const concernedConversationId: string = request.params.conversation_id;
+
+    const concernedConversationIdIsValid: boolean = isValidObjectId(
+      concernedConversationId
+    );
+
+    if (!concernedConversationIdIsValid)
+      throw new Code400HttpError("The provided conversation id is not valid");
 
     const concernedConversation: IConversation | null =
       await request.app.locals.database.getConversationById(
@@ -55,6 +64,12 @@ export class RequestDataHelper {
 
   public static async getConcernedMessage(request: Request): Promise<IMessage> {
     const concernedMessageId: string = request.params.message_id;
+
+    const concernedMessageIdIsValid: boolean =
+      isValidObjectId(concernedMessageId);
+
+    if (!concernedMessageIdIsValid)
+      throw new Code400HttpError("The provided message id is not valid");
 
     const concernedMessage: IMessage | null =
       await request.app.locals.database.getMessageById(concernedMessageId);

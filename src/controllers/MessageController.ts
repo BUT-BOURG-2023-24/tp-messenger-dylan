@@ -140,7 +140,7 @@ export class MessageController extends Controller {
 
     await request.app.locals.database.deleteMessage(concernedMessage);
 
-    request.app.locals.socketController.sendMessageReactionAddingEvent(
+    request.app.locals.socketController.sendMessageDeletingEvent(
       convernedMessageConversation,
       concernedMessage
     );
