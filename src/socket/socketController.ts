@@ -101,25 +101,19 @@ export class SocketController {
     }
 
     this.io.to(conversation.id).emit("@newConversation", {
-      conversation: {
-        _id: conversation.id,
-      },
+      conversation: conversation,
     });
   }
 
   public sendConversationDeletingEvent(conversation: IConversation): void {
     this.io.to(conversation.id).emit("@conversationDeleted", {
-      conversation: {
-        _id: conversation.id,
-      },
+      conversation: conversation,
     });
   }
 
   public sendConversationSeenEvent(conversation: IConversation): void {
     this.io.to(conversation.id).emit("@conversationSeen", {
-      conversation: {
-        _id: conversation.id,
-      },
+      conversation: conversation,
     });
   }
 
@@ -128,9 +122,7 @@ export class SocketController {
     message: IMessage
   ): void {
     this.io.to(conversation.id).emit("@newMessage", {
-      message: {
-        _id: message.id,
-      },
+      message: message,
     });
   }
 
@@ -139,9 +131,7 @@ export class SocketController {
     message: IMessage
   ): void {
     this.io.to(conversation.id).emit("@messageEdited", {
-      message: {
-        _id: message.id,
-      },
+      message: message,
     });
   }
 
@@ -150,9 +140,7 @@ export class SocketController {
     message: IMessage
   ): void {
     this.io.to(conversation.id).emit("@reactionAdded", {
-      message: {
-        _id: message.id,
-      },
+      message: message,
     });
   }
 
@@ -161,9 +149,7 @@ export class SocketController {
     message: IMessage
   ): void {
     this.io.to(conversation.id).emit("@messageDeleted", {
-      message: {
-        _id: message.id,
-      },
+      message: message,
     });
   }
 

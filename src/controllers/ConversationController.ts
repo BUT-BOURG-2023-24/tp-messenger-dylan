@@ -82,10 +82,7 @@ export class ConversationController extends Controller {
     );
 
     response.status(200).send({
-      conversation: {
-        _id: newConversation.id,
-        title: newConversation.title,
-      },
+      conversation: newConversation,
     });
   }
 
@@ -99,9 +96,7 @@ export class ConversationController extends Controller {
       await request.app.locals.database.getAllConversationsForUser(currentUser);
 
     response.status(200).send({
-      conversations: userConversations.map((userConversation) => {
-        return userConversation;
-      }),
+      conversations: userConversations,
     });
   }
 
@@ -127,9 +122,7 @@ export class ConversationController extends Controller {
     );
 
     response.status(200).send({
-      conversation: {
-        _id: concernedConversation.id,
-      },
+      conversation: concernedConversation,
     });
   }
 
@@ -174,9 +167,7 @@ export class ConversationController extends Controller {
     );
 
     response.status(200).send({
-      conversation: {
-        _id: concernedConversation.id,
-      },
+      conversation: concernedConversation,
     });
   }
 
@@ -218,9 +209,7 @@ export class ConversationController extends Controller {
     );
 
     response.status(200).send({
-      message: {
-        _id: newMessage.id,
-      },
+      message: newMessage,
     });
   }
 }

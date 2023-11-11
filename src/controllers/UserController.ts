@@ -55,9 +55,7 @@ export class UserController extends Controller {
       const userToken: string = TokenHelper.generateUserToken(newUser.id);
 
       response.status(200).send({
-        user: {
-          _id: newUser.id,
-        },
+        user: newUser,
         token: userToken,
         isNewUser: true,
       });
@@ -92,12 +90,7 @@ export class UserController extends Controller {
       await request.app.locals.database.getAllUsers();
 
     response.status(200).send({
-      users: allUsers.map((user) => {
-        return {
-          _id: user.id,
-          username: user.username,
-        };
-      }),
+      users: allUsers,
     });
   }
 }

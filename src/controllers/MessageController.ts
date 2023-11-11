@@ -66,9 +66,7 @@ export class MessageController extends Controller {
     );
 
     response.status(200).send({
-      message: {
-        _id: concernedMessage.id,
-      },
+      message: concernedMessage,
     });
   }
 
@@ -109,9 +107,7 @@ export class MessageController extends Controller {
     );
 
     response.status(200).send({
-      message: {
-        _id: concernedMessage.id,
-      },
+      message: concernedMessage,
     });
   }
 
@@ -146,9 +142,7 @@ export class MessageController extends Controller {
     );
 
     response.status(200).send({
-      message: {
-        _id: concernedMessage.id,
-      },
+      message: concernedMessage,
     });
   }
 }
