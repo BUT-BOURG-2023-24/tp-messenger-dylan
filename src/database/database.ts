@@ -56,16 +56,6 @@ export class Database {
     return UserModel.find().exec();
   }
 
-  public async getConversationWithParticipants(
-    conversationId: MongooseID
-  ): Promise<IConversation | null> {
-    const conversation = await ConversationModel.findById(conversationId);
-
-    await conversation?.populate("participants");
-
-    return conversation;
-  }
-
   public getAllConversationsForUser(
     user: IUser
   ): Promise<Array<IConversation>> {
@@ -130,10 +120,6 @@ export class Database {
 
   public async deleteConversation(conversation: IConversation): Promise<void> {
     await ConversationModel.deleteOne({ _id: conversation.id });
-  }
-
-  public async createMessage(message: IMessage): Promise<void> {
-    await message.save();
   }
 
   public async editMessage(
