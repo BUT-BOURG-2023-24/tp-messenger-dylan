@@ -6,7 +6,7 @@ import { IReaction, ReactionSchema } from "./ReactionModel";
 export interface IMessage extends Document {
   conversationId: MongooseID;
   from: IUser;
-  replyTo: IUser;
+  replyTo: IMessage;
   content: string;
   postedAt: Date;
   edited: boolean;
@@ -21,7 +21,7 @@ export const messageSchema: Schema<IMessage> = new Schema<IMessage>({
     required: true,
   },
   from: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  replyTo: { type: Schema.Types.ObjectId, ref: "User" },
+  replyTo: { type: Schema.Types.ObjectId, ref: "Message" },
   content: {
     type: String,
     required: true,
