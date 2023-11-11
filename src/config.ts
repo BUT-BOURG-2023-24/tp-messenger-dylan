@@ -4,7 +4,7 @@ dotenv.config();
 
 export default {
   DB_ADDRESS: process.env.DB_ADDRESS ?? "localhost:27017",
-  DB_ADDRESS_TEST: process.env.DB_ADDRESS_TEST ?? "",
+  DB_ADDRESS_TEST: process.env.DB_ADDRESS_TEST ?? "localhost:27017",
   DB_NAME: process.env.DB_NAME ?? "messenger",
   PORT: process.env.PORT ?? 5000,
   JWT_SECRET: process.env.JWT_SECRET ?? "secret",

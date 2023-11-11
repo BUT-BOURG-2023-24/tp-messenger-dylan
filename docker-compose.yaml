@@ -10,3 +10,12 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=12345
     ports:
       - 27017:27017
+  database_test:
+    container_name: tp_messenger_database_test
+    image: mongo:5.0
+    environment:
+      - MONGO_INITDB_DATABASE=messenger
+      - MONGO_INITDB_ROOT_USERNAME=messenger_user
+      - MONGO_INITDB_ROOT_PASSWORD=12345
+    ports:
+      - 27017:27017
