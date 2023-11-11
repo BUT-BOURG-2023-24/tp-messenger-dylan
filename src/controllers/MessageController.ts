@@ -3,16 +3,13 @@ import { Controller } from "./Controller";
 import { checkJwtMiddleware } from "../middlewares/CheckJwtMiddleware";
 import { IUser } from "../database/models/UserModel";
 import { IMessage } from "../database/models/MessageModel";
-import {
-  Code401HttpError,
-  Code404HttpError,
-  Code500HttpError,
-} from "../error/HttpError";
+import { Code500HttpError } from "../error/HttpError";
 import { IConversation } from "../database/models/ConversationModel";
 import { ReactionType } from "../database/models/ReactionModel";
 import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
 import { newMessageContentJoiSchema } from "./joi-schema/NewMessageContentJoiSchema";
 import { messageReactionAddingJoiSchema } from "./joi-schema/MessageReactionAddingJoiSchema";
+import { RequestDataHelper } from "../helpers/RequestDataHelper";
 
 export class MessageController extends Controller {
   public constructor(app: Application) {
@@ -23,26 +20,26 @@ export class MessageController extends Controller {
     this.router.put(
       "/:message_id",
       joiValidatorMiddleware(newMessageContentJoiSchema),
-      this.updateMessage
+      this.encapsulate(this.updateMessage)
     );
     this.router.post(
       "/:message_id",
       joiValidatorMiddleware(messageReactionAddingJoiSchema),
-      this.reactToMessage
+      this.encapsulate(this.reactToMessage)
     );
-    this.router.delete("/:message_id", this.deleteMessage);
+    this.router.delete("/:message_id", this.encapsulate(this.deleteMessage));
   }
 
   private async updateMessage(
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const concernedMessage: IMessage =
-      await MessageController.getConcernedMessage(request);
+      await RequestDataHelper.getConcernedMessage(request);
 
-    await MessageController.checkIfCurrentUserIsAuthor(
+    await RequestDataHelper.checkIfCurrentUserIsAuthor(
       request,
       currentUser,
       concernedMessage
@@ -79,10 +76,10 @@ export class MessageController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const concernedMessage: IMessage =
-      await MessageController.getConcernedMessage(request);
+      await RequestDataHelper.getConcernedMessage(request);
 
     const convernedMessageConversation: IConversation | null =
       await request.app.locals.database.getConversationById(
@@ -92,7 +89,7 @@ export class MessageController extends Controller {
     if (!convernedMessageConversation)
       throw new Code500HttpError("The message hasn't a conversation parent");
 
-    await MessageController.checkIfCurrentUserIsParticipant(
+    await RequestDataHelper.checkIfCurrentUserIsParticipant(
       request,
       currentUser,
       convernedMessageConversation
@@ -122,12 +119,12 @@ export class MessageController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const concernedMessage: IMessage =
-      await MessageController.getConcernedMessage(request);
+      await RequestDataHelper.getConcernedMessage(request);
 
-    await MessageController.checkIfCurrentUserIsAuthor(
+    await RequestDataHelper.checkIfCurrentUserIsAuthor(
       request,
       currentUser,
       concernedMessage
@@ -153,55 +150,5 @@ export class MessageController extends Controller {
         _id: concernedMessage.id,
       },
     });
-  }
-
-  private static async getConcernedMessage(
-    request: Request
-  ): Promise<IMessage> {
-    const concernedMessageId: string = request.params.message_id;
-
-    const concernedMessage: IMessage | null =
-      await request.app.locals.database.getMessageById(concernedMessageId);
-
-    if (!concernedMessage)
-      throw new Code404HttpError(
-        "This message id passed to the parameters doesn't exist"
-      );
-
-    return concernedMessage;
-  }
-
-  private static async checkIfCurrentUserIsAuthor(
-    request: Request,
-    currentUser: IUser,
-    concernedMessage: IMessage
-  ): Promise<void> {
-    const currentUserIsAuthor =
-      await request.app.locals.database.checkIfUserIsMessageAuthor(
-        currentUser,
-        concernedMessage
-      );
-
-    if (!currentUserIsAuthor)
-      throw new Code401HttpError(
-        "You can't modify this message because you are not the author of it"
-      );
-  }
-
-  private static async checkIfCurrentUserIsParticipant(
-    request: Request,
-    currentUser: IUser,
-    concernedConversation: IConversation
-  ): Promise<void> {
-    const currentUserIsParticipant =
-      await request.app.locals.database.checkIfUserIsConversationParticipant(
-        currentUser,
-        concernedConversation
-      );
-
-    if (!currentUserIsParticipant)
-      throw new Code401HttpError(
-        "You can't modify this conversation because you are not a participant of it"
-      );
   }
 }

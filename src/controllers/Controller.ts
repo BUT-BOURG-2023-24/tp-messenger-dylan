@@ -1,6 +1,5 @@
-import { Application, Request, Router } from "express";
-import { IUser } from "../database/models/UserModel";
-import { Code500HttpError } from "../error/HttpError";
+import { Application, Request, Response, Router } from "express";
+import { HttpError } from "../error/HttpError";
 
 export class Controller {
   protected readonly router = Router();
@@ -9,12 +8,22 @@ export class Controller {
     app.use(apiRoute, this.router);
   }
 
-  protected static getCurrentUser(request: Request): IUser {
-    const currentUser: IUser | undefined = request.currentUser;
+  protected encapsulate(
+    requestHandler: (
+      request: Request,
+      response: Response
+    ) => void | Promise<void>
+  ) {
+    return async (request: Request, response: Response) => {
+      try {
+        await requestHandler(request, response);
+      } catch (error: unknown) {
+        const httpError: HttpError = HttpError.handleUnknownError(error);
 
-    if (!currentUser)
-      throw new Code500HttpError("The CheckJwtMiddleware doesn't work");
-
-    return currentUser;
+        response.status(httpError.status).send({
+          error: httpError.message,
+        });
+      }
+    };
   }
 }

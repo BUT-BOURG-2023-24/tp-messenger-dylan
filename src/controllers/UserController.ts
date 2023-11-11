@@ -3,7 +3,6 @@ import { Controller } from "./Controller";
 import { IUser, UserModel } from "../database/models/UserModel";
 import { pickRandom } from "../pictures";
 import { TokenHelper } from "../helpers/TokenHelper";
-import { checkJwtMiddleware } from "../middlewares/CheckJwtMiddleware";
 import { compare } from "bcrypt";
 import { Code401HttpError } from "../error/HttpError";
 import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
@@ -16,10 +15,10 @@ export class UserController extends Controller {
     this.router.post(
       "/login",
       joiValidatorMiddleware(userLoginJoiSchema),
-      this.login
+      this.encapsulate(this.login)
     );
-    this.router.get("/online", checkJwtMiddleware, this.getOnlineUsers);
-    this.router.get("/all", checkJwtMiddleware, this.getAllUsers);
+    this.router.get("/online", this.encapsulate(this.getOnlineUsers));
+    this.router.get("/all", this.encapsulate(this.getAllUsers));
   }
 
   private async login(request: Request, response: Response): Promise<void> {
@@ -71,7 +70,7 @@ export class UserController extends Controller {
   ): Promise<void> {
     const onlineUserIds: Array<string> = new Array();
 
-    for (const entry of request.app.locals.socketController.socketIdUserIdMap) {
+    for (const entry of request.app.locals.socketController.userIdSocketIdMap) {
       const userId: string = entry[0];
 
       onlineUserIds.push(userId);

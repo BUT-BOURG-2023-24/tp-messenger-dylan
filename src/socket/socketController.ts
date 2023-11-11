@@ -1,17 +1,11 @@
 import { Database } from "../database/Database";
 import { Server, Socket } from "socket.io";
-import { TokenHelper } from "../helpers/TokenHelper";
 import { IUser } from "../database/models/UserModel";
 import { IConversation } from "../database/models/ConversationModel";
 import { IMessage } from "../database/models/MessageModel";
 
 export class SocketController {
-  /*
-		Pour savoir si un utilisateur est connecté depuis la route /online,
-		Nous devons stocker une correspondance socketId <=> userId.
-	*/
-
-  public readonly socketIdUserIdMap = new Map<string, string>();
+  public readonly userIdSocketIdMap = new Map<string, string>();
 
   public constructor(
     private readonly io: Server,
@@ -34,24 +28,6 @@ export class SocketController {
       connectedSocket.on("disconnect", () => {
         this.handleDeconnection(connectedSocket, currentUser);
       });
-
-      // Récupérer les infos voulu depuis les extra headers.
-      // socket.handshake.headers contient ce que vous voulez.
-      /*
-				Dès qu'un socket utilisateur arrive, on veut l'ajouter à la room
-				pour chaque conversation dans laquelle il se trouve. 
-
-				ETAPE 1: 
-					Trouver toutes les conversations ou participe l'utilisateur. 
-
-				ETAPE 2:
-					Rejoindre chaque room ayant pour nom l'ID de la conversation. 
-
-				HINT:
-					socket.join(roomName: string) permet de rejoindre une room.
-					Le paramètre roomName doit absolument être de type string,
-					si vous mettez un type number, cela ne fonctionnera pas.
-			*/
     });
   }
 
@@ -59,7 +35,7 @@ export class SocketController {
     connectedSocket: Socket,
     currentUser: IUser
   ): Promise<void> {
-    this.linkSocketIdUserId(connectedSocket, currentUser.id);
+    this.linkUserIdSocketId(connectedSocket, currentUser.id);
 
     const userConversations: Array<IConversation> =
       await this.database.getAllConversationsForUser(currentUser);
@@ -83,24 +59,14 @@ export class SocketController {
   }
 
   private getUserId(connectedSocket: Socket): string | undefined {
-    const userToken: string | undefined =
-      connectedSocket.handshake.headers.authorization;
-
-    if (!userToken) return;
-
-    let userTokenPayload = TokenHelper.decodeUserToken(userToken);
-
-    if (!userTokenPayload.sub || typeof userTokenPayload.sub !== "string")
-      return undefined;
-
-    return userTokenPayload.sub;
+    return connectedSocket.handshake.headers.userid as string | undefined;
   }
 
-  private linkSocketIdUserId(socket: Socket, userId: string): void {
-    this.socketIdUserIdMap.set(socket.id, userId);
+  private linkUserIdSocketId(socket: Socket, userId: string): void {
+    this.userIdSocketIdMap.set(userId, socket.id);
 
     socket.on("disconnect", () => {
-      this.socketIdUserIdMap.delete(socket.id);
+      this.userIdSocketIdMap.delete(userId);
     });
   }
 
@@ -116,7 +82,24 @@ export class SocketController {
     return currentUser ?? undefined;
   }
 
-  public sendConversationCreationEvent(conversation: IConversation): void {
+  public sendConversationCreationEvent(
+    concernedUserIds: Array<string>,
+    conversation: IConversation
+  ): void {
+    for (const concernedUserId of concernedUserIds) {
+      const concernedUserSocketId: string | undefined =
+        this.userIdSocketIdMap.get(concernedUserId);
+
+      if (!concernedUserSocketId) continue;
+
+      const concernedUserSocket: Socket | undefined =
+        this.io.sockets.sockets.get(concernedUserSocketId);
+
+      if (!concernedUserSocket) continue;
+
+      concernedUserSocket.join(conversation.id);
+    }
+
     this.io.to(conversation.id).emit("@newConversation", {
       conversation: {
         _id: conversation.id,

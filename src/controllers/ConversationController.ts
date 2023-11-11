@@ -2,7 +2,7 @@ import { Application, Request, Response } from "express";
 import { Controller } from "./Controller";
 import { IUser } from "../database/models/UserModel";
 import { checkJwtMiddleware } from "../middlewares/CheckJwtMiddleware";
-import { Code401HttpError, Code404HttpError } from "../error/HttpError";
+import { Code404HttpError } from "../error/HttpError";
 import {
   ConversationModel,
   IConversation,
@@ -12,6 +12,7 @@ import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
 import { conversationCreationJoiSchema } from "./joi-schema/ConversationCreationJoiSchema";
 import { seeConversationMessageJoiSchema } from "./joi-schema/SeeConversationMessageJoiSchema";
 import { newConversationMessageJoiSchema } from "./joi-schema/NewConversationMessageJoiSchema";
+import { RequestDataHelper } from "../helpers/RequestDataHelper";
 
 export class ConversationController extends Controller {
   public constructor(app: Application) {
@@ -22,19 +23,22 @@ export class ConversationController extends Controller {
     this.router.post(
       "/",
       joiValidatorMiddleware(conversationCreationJoiSchema),
-      this.createConversation
+      this.encapsulate(this.createConversation)
     );
-    this.router.get("/", this.getUserConversations);
-    this.router.delete("/:conversation_id", this.deleteConversation);
+    this.router.get("/", this.encapsulate(this.getUserConversations));
+    this.router.delete(
+      "/:conversation_id",
+      this.encapsulate(this.deleteConversation)
+    );
     this.router.post(
       "/see/:conversation_id",
       joiValidatorMiddleware(seeConversationMessageJoiSchema),
-      this.seeConversationMessage
+      this.encapsulate(this.seeConversationMessage)
     );
     this.router.post(
       "/:conversation_id",
       joiValidatorMiddleware(newConversationMessageJoiSchema),
-      this.sendMessage
+      this.encapsulate(this.sendMessage)
     );
   }
 
@@ -42,7 +46,7 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const concernedUsersIds: Array<string> = request.body.concernedUsersIds;
 
@@ -59,12 +63,14 @@ export class ConversationController extends Controller {
     await request.app.locals.database.createConversation(newConversation);
 
     request.app.locals.socketController.sendConversationCreationEvent(
+      concernedUsersIds,
       newConversation
     );
 
     response.status(200).send({
       conversation: {
         _id: newConversation.id,
+        title: newConversation.title,
       },
     });
   }
@@ -73,18 +79,14 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const userConversations: Array<IConversation> =
       await request.app.locals.database.getAllConversationsForUser(currentUser);
 
     response.status(200).send({
       conversations: userConversations.map((userConversation) => {
-        return {
-          _id: userConversation.id,
-          title: userConversation.title,
-          messages: userConversation.messages,
-        };
+        return userConversation;
       }),
     });
   }
@@ -93,12 +95,12 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const concernedConversation: IConversation =
-      await ConversationController.getConvernedConversation(request);
+      await RequestDataHelper.getConcernedConversation(request);
 
-    await ConversationController.checkIfCurrentUserIsParticipant(
+    await RequestDataHelper.checkIfCurrentUserIsParticipant(
       request,
       currentUser,
       concernedConversation
@@ -121,12 +123,12 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const concernedConversation: IConversation =
-      await ConversationController.getConvernedConversation(request);
+      await RequestDataHelper.getConcernedConversation(request);
 
-    await ConversationController.checkIfCurrentUserIsParticipant(
+    await RequestDataHelper.checkIfCurrentUserIsParticipant(
       request,
       currentUser,
       concernedConversation
@@ -163,12 +165,12 @@ export class ConversationController extends Controller {
     request: Request,
     response: Response
   ): Promise<void> {
-    const currentUser: IUser = Controller.getCurrentUser(request);
+    const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
 
     const concernedConversation: IConversation =
-      await ConversationController.getConvernedConversation(request);
+      await RequestDataHelper.getConcernedConversation(request);
 
-    await ConversationController.checkIfCurrentUserIsParticipant(
+    await RequestDataHelper.checkIfCurrentUserIsParticipant(
       request,
       currentUser,
       concernedConversation
@@ -179,7 +181,7 @@ export class ConversationController extends Controller {
     const newMessage: IMessage = new MessageModel({
       from: currentUser,
       replyTo: messageReplyId,
-      content: request.body.content,
+      content: request.body.messageContent,
       postedAt: new Date(),
       edited: false,
       deleted: false,
@@ -201,40 +203,5 @@ export class ConversationController extends Controller {
         _id: concernedConversation.id,
       },
     });
-  }
-
-  private static async getConvernedConversation(
-    request: Request
-  ): Promise<IConversation> {
-    const concernedConversationId: string = request.params.conversation_id;
-
-    const concernedConversation: IConversation | null =
-      await request.app.locals.database.getConversationById(
-        concernedConversationId
-      );
-
-    if (!concernedConversation)
-      throw new Code404HttpError(
-        "This conversation passed to the parameters doesn't exist"
-      );
-
-    return concernedConversation;
-  }
-
-  private static async checkIfCurrentUserIsParticipant(
-    request: Request,
-    currentUser: IUser,
-    concernedConversation: IConversation
-  ): Promise<void> {
-    const currentUserIsParticipant =
-      await request.app.locals.database.checkIfUserIsConversationParticipant(
-        currentUser,
-        concernedConversation
-      );
-
-    if (!currentUserIsParticipant)
-      throw new Code401HttpError(
-        "You can't modify this conversation because you are not a participant of it"
-      );
   }
 }
