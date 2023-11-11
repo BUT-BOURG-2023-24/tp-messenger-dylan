@@ -1,35 +1,60 @@
-import http from "http";
-import { Express } from "express";
+import { Application } from "express";
 import { setup, teardown } from "./setupTests";
 import supertest from "supertest";
 
-describe('USERS', () => 
-{
-	let app:Express, server:http.Server;
+describe("USERS", () => {
+  let app: Application;
 
-	beforeAll(async () => {
-		let res = await setup();
-		app = res.app; 
-		server = res.server;
-	});
+  beforeAll(async () => {
+    const setupResult = await setup();
 
-	afterAll(async () => {
-		await teardown();
-	});
+    app = setupResult.app;
+  });
 
-	test("Login unexisting user", async () => {
+  afterAll(async () => {
+    await teardown();
+  });
 
-	});
+  test("Login unexisting user", async () => {
+    const response = await supertest(app).post("/users/login").send({
+      username: "testexist",
+      password: "hehe45",
+    });
 
-	test("Login existing user", async () => {
+    expect(response.statusCode).toBe(200);
+    expect(response.body.isNewUser).toBeTruthy();
+  });
 
-	});
+  test("Login existing user", async () => {
+    const response = await supertest(app).post("/users/login").send({
+      username: "test2",
+      password: "testpwd",
+    });
 
-	test("Login wrong password", async () => {
+    expect(response.statusCode).toBe(200);
+    expect(response.body.isNewUser).toBeFalsy();
+  });
 
-	});
+  test("Login wrong password", async () => {
+    const response = await supertest(app).post("/users/login").send({
+      username: "test2",
+      password: "mauvaismdp",
+    });
 
-	test("GET active users", async () => {
+    expect(response.statusCode).toBe(400);
+  });
 
-	});
+  test("GET active users", async () => {
+    const response = await supertest(app).get("/users/online").send();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.users).toHaveLength(0);
+  });
+
+  test("GET all users", async () => {
+    const response = await supertest(app).get("/users/all").send();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.users).toHaveLength(4);
+  });
 });

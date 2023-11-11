@@ -5,57 +5,71 @@ import { Application } from "express";
 import mongoose from "mongoose";
 import { Database } from "../database/Database";
 import { makeApp } from "../app";
+import { IUser } from "../database/models/UserModel";
 
 interface SetupResult {
   server: http.Server;
   app: Application;
+  testUserToken: string;
+  testUser: IUser;
+  testUser2Token: string;
+  testUser2: IUser;
+  testUser3Token: string;
+  testUser3: IUser;
 }
 
 async function setup(): Promise<SetupResult> {
-  let database = new Database(true);
+  const database = new Database(true);
 
   await database.connect();
 
-  /*
-		On veut supprimer toutes les collections de la base de données de test
-		avant de commencer les tests.
+  const collections = await mongoose.connection.db.collections();
 
-		Pour récupérer toutes les collections, on peut utiliser:
-		await mongoose.connection.db.collections();
+  for (const collection of collections) {
+    await collection.deleteMany({});
+  }
 
-		Pour supprimer une collection, on peut faire :
-		await collection.deleteMany({});
-	*/
+  const { app, server } = makeApp(database);
 
-  /*
-		Nous voulons créer au moins 2 utilisateurs pour pouvoir 
-		créer une conversation a 2 participants. 
-
-		On peut faire appel aux fonctions de la BDD pour créer 2 utilisateurs.
-	*/
-
-  let { app, server } = makeApp(database);
-
-  let res = await supertest(app)
+  const userCreationResponse1 = await supertest(app)
     .post("/users/login")
-    .send({ username: "test", password: "testpwd" });
+    .send({ username: "test1", password: "testpwd" });
 
-  /*
-		Pour se faciliter la tâche, nous allons également connecter directement
-		un utilisateur pour les tests. 
+  const userCreationResponse2 = await supertest(app)
+    .post("/users/login")
+    .send({ username: "test2", password: "testpwd" });
 
-		Nous voulons conserver le retour de la requête login, qui contient 
-		l'utilisateur mais aussi le token.
+  const userCreationResponse3 = await supertest(app)
+    .post("/users/login")
+    .send({ username: "test3", password: "testpwd" });
 
-		Il faudra retourner ces valeurs là, avec l'app & le server. 
-	*/
+  await supertest(app)
+    .post("/conversations")
+    .send({
+      concernedUsersIds: [
+        userCreationResponse1.body.user._id,
+        userCreationResponse2.body.user._id,
+      ],
+    });
 
-  // let userToken: string = token;
-  // let user: IUser = user;
+  const testUserToken: string = userCreationResponse1.body.token;
+  const testUser: IUser = userCreationResponse1.body.user;
+
+  const testUser2Token: string = userCreationResponse2.body.token;
+  const testUser2: IUser = userCreationResponse2.body.user;
+
+  const testUser3Token: string = userCreationResponse3.body.token;
+  const testUser3: IUser = userCreationResponse3.body.user;
 
   return {
     app,
     server,
+    testUserToken,
+    testUser,
+    testUser2Token,
+    testUser2,
+    testUser3Token,
+    testUser3,
   };
 }
 
