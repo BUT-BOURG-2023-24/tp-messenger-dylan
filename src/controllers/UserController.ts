@@ -34,12 +34,10 @@ export class UserController extends Controller {
       if (!passwordIsValid)
         throw new Code400HttpError("The password is invalid");
 
-      const userToken: string = TokenHelper.generateUserToken(currentUser.id);
+      const userToken: string = TokenHelper.generateUserToken(currentUser);
 
       response.status(200).send({
-        user: {
-          _id: currentUser.id,
-        },
+        user: currentUser,
         token: userToken,
         isNewUser: false,
       });
@@ -52,7 +50,7 @@ export class UserController extends Controller {
 
       await request.app.locals.database.createUser(newUser);
 
-      const userToken: string = TokenHelper.generateUserToken(newUser.id);
+      const userToken: string = TokenHelper.generateUserToken(newUser);
 
       response.status(200).send({
         user: newUser,

@@ -1,4 +1,3 @@
-import { Schema } from "mongoose";
 import { IUser } from "./UserModel";
 
 export enum ReactionType {
@@ -18,14 +17,3 @@ export const reactionTypeValidator = {
   values: ["HAPPY", "SAD", "THUMBSUP", "THUMBSDOWN", "LOVE"],
   message: "enum validator failed for path `{PATH}` with value `{VALUE}`",
 };
-
-export const ReactionSchema: Schema<IReaction> = new Schema<IReaction>({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-  },
-  reaction: {
-    type: String,
-    enum: reactionTypeValidator,
-  },
-});

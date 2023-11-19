@@ -63,7 +63,19 @@ export class Database {
       participants: {
         _id: user._id,
       },
-    }).populate("messages");
+    })
+      .populate({
+        path: "messages",
+        populate: {
+          path: "from",
+        },
+        match: {
+          deleted: false,
+        },
+      })
+      .populate({
+        path: "participants",
+      });
   }
 
   public getConversationById(
@@ -143,10 +155,7 @@ export class Database {
     user: IUser,
     reactionType: ReactionType
   ): Promise<void> {
-    message.reactions.push({
-      user: user.id,
-      reaction: reactionType,
-    });
+    message.reactions.set(user.id, reactionType);
 
     await message.save();
   }

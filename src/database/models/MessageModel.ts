@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { MongooseID } from "../../types";
 import { IUser } from "./UserModel";
-import { IReaction, ReactionSchema } from "./ReactionModel";
+import { ReactionType, reactionTypeValidator } from "./ReactionModel";
 
 export interface IMessage extends Document {
   conversationId: MongooseID;
@@ -11,7 +11,7 @@ export interface IMessage extends Document {
   postedAt: Date;
   edited: boolean;
   deleted: boolean;
-  reactions: Array<IReaction>;
+  reactions: Map<MongooseID, ReactionType>;
 }
 
 export const messageSchema: Schema<IMessage> = new Schema<IMessage>({
@@ -38,7 +38,19 @@ export const messageSchema: Schema<IMessage> = new Schema<IMessage>({
     type: Boolean,
     required: true,
   },
-  reactions: [ReactionSchema],
+  reactions: {
+    type: Map,
+    of: new Schema({
+      user: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+      reaction: {
+        type: String,
+        enum: reactionTypeValidator,
+      },
+    }),
+  },
 });
 
 export const MessageModel = mongoose.model<IMessage>("Message", messageSchema);
