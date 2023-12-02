@@ -53,6 +53,8 @@ export class ConversationController extends Controller {
 
     concernedUsersIds.push(currentUser.id);
 
+    const concernedUsers: Array<IUser> = new Array();
+
     for (const concernedUserId of concernedUsersIds) {
       const concernedUserIdIsValid: boolean = isValidObjectId(concernedUserId);
 
@@ -64,10 +66,14 @@ export class ConversationController extends Controller {
 
       if (!concernedUser)
         throw new Code400HttpError("A provided user doesn't exist");
+
+      concernedUsers.push(concernedUser);
     }
 
     const newConversation: IConversation = new ConversationModel({
-      title: new Date().toLocaleString(),
+      title: concernedUsers
+        .map((concernedUser) => concernedUser.username)
+        .join(", "),
       lastUpdate: new Date(),
       participants: concernedUsersIds,
       messages: new Array(),

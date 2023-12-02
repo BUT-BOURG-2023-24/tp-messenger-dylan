@@ -8,8 +8,8 @@ import { IConversation } from "../database/models/ConversationModel";
 import { ReactionType } from "../database/models/ReactionModel";
 import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
 import { newMessageContentJoiSchema } from "./joi-schema/NewMessageContentJoiSchema";
-import { messageReactionAddingJoiSchema } from "./joi-schema/MessageReactionAddingJoiSchema";
 import { RequestDataHelper } from "../helpers/RequestDataHelper";
+import { messageReactionJoiSchema } from "./joi-schema/MessageReactionJoiSchema";
 
 export class MessageController extends Controller {
   public constructor(app: Application) {
@@ -24,7 +24,7 @@ export class MessageController extends Controller {
     );
     this.router.post(
       "/:message_id",
-      joiValidatorMiddleware(messageReactionAddingJoiSchema),
+      joiValidatorMiddleware(messageReactionJoiSchema),
       this.encapsulate(this.reactToMessage)
     );
     this.router.delete("/:message_id", this.encapsulate(this.deleteMessage));
@@ -60,6 +60,10 @@ export class MessageController extends Controller {
       newMessageContent
     );
 
+    await request.app.locals.database.updateConversation(
+      convernedMessageConversation
+    );
+
     request.app.locals.socketController.sendMessageCreationEvent(
       convernedMessageConversation,
       concernedMessage
@@ -93,12 +97,16 @@ export class MessageController extends Controller {
       convernedMessageConversation
     );
 
-    const reactionTypeToAdd: string = request.body.reaction;
+    const reactionTypeToAdd: ReactionType | undefined = request.body.reaction;
 
     await request.app.locals.database.reactToMessage(
       concernedMessage,
       currentUser,
-      reactionTypeToAdd as ReactionType
+      reactionTypeToAdd
+    );
+
+    await request.app.locals.database.updateConversation(
+      convernedMessageConversation
     );
 
     request.app.locals.socketController.sendMessageReactionAddingEvent(
@@ -135,6 +143,9 @@ export class MessageController extends Controller {
       throw new Code500HttpError("The message hasn't a conversation parent");
 
     await request.app.locals.database.deleteMessage(concernedMessage);
+    await request.app.locals.database.updateConversation(
+      convernedMessageConversation
+    );
 
     request.app.locals.socketController.sendMessageDeletingEvent(
       convernedMessageConversation,

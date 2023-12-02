@@ -86,6 +86,16 @@ export class Database {
 
   public async createConversation(conversation: IConversation): Promise<void> {
     await conversation.save();
+
+    await conversation.populate({
+      path: "participants",
+    });
+  }
+
+  public async updateConversation(conversation: IConversation): Promise<void> {
+    conversation.lastUpdate = new Date();
+
+    await conversation.save();
   }
 
   public async checkIfUserIsConversationParticipant(
@@ -113,6 +123,7 @@ export class Database {
     await message.save();
 
     conversation.messages.push(message);
+    conversation.lastUpdate = new Date();
 
     await conversation.save();
   }
@@ -122,10 +133,7 @@ export class Database {
     user: IUser,
     message: IMessage
   ): Promise<void> {
-    conversation.seen.push({
-      user: user.id,
-      message: message.id,
-    });
+    conversation.seen.set(user.id, message.id);
 
     await conversation.save();
   }
@@ -153,9 +161,13 @@ export class Database {
   public async reactToMessage(
     message: IMessage,
     user: IUser,
-    reactionType: ReactionType
+    reactionType?: ReactionType
   ): Promise<void> {
-    message.reactions.set(user.id, reactionType);
+    if (reactionType) {
+      message.reactions.set(user.id, reactionType);
+    } else {
+      message.reactions.delete(user.id);
+    }
 
     await message.save();
   }

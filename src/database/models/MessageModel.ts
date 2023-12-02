@@ -40,16 +40,8 @@ export const messageSchema: Schema<IMessage> = new Schema<IMessage>({
   },
   reactions: {
     type: Map,
-    of: new Schema({
-      user: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-      reaction: {
-        type: String,
-        enum: reactionTypeValidator,
-      },
-    }),
+    of: { type: String, enum: reactionTypeValidator },
+    required: true,
   },
 });
 
