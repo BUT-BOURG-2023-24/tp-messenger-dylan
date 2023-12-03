@@ -32,8 +32,6 @@ describe("CONVERSATIONS", () => {
       })
       .set("authorization", testUserToken);
 
-    console.log(response.error);
-
     expect(response.statusCode).toBe(200);
   });
 
