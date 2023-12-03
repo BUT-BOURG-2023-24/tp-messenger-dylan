@@ -45,7 +45,7 @@ export class SocketController {
     }
 
     connectedSocket.broadcast.emit("@onConnected", {
-      userId: currentUser.id,
+      user: currentUser,
     });
   }
 
@@ -54,7 +54,7 @@ export class SocketController {
     currentUser: IUser
   ): Promise<void> {
     connectedSocket.broadcast.emit("@onDisconnected", {
-      userId: currentUser.id,
+      user: currentUser,
     });
   }
 
@@ -82,9 +82,14 @@ export class SocketController {
     return currentUser ?? undefined;
   }
 
+  public getSocket(socketId: string): Socket | undefined {
+    return this.io.sockets.sockets.get(socketId);
+  }
+
   public sendConversationCreationEvent(
     concernedUserIds: Array<string>,
-    conversation: IConversation
+    conversation: IConversation,
+    socketThatTriggers?: Socket
   ): void {
     for (const concernedUserId of concernedUserIds) {
       const concernedUserSocketId: string | undefined =
@@ -100,55 +105,79 @@ export class SocketController {
       concernedUserSocket.join(conversation.id);
     }
 
-    this.io.to(conversation.id).emit("@newConversation", {
+    const broadcastToUse = socketThatTriggers?.broadcast ?? this.io.sockets;
+
+    broadcastToUse.to(conversation.id).emit("@newConversation", {
       conversation: conversation,
     });
   }
 
-  public sendConversationDeletingEvent(conversation: IConversation): void {
-    this.io.to(conversation.id).emit("@conversationDeleted", {
+  public sendConversationDeletingEvent(
+    conversation: IConversation,
+    socketThatTriggers?: Socket
+  ): void {
+    const broadcastToUse = socketThatTriggers?.broadcast ?? this.io.sockets;
+
+    broadcastToUse.to(conversation.id).emit("@conversationDeleted", {
       conversation: conversation,
     });
   }
 
-  public sendConversationSeenEvent(conversation: IConversation): void {
-    this.io.to(conversation.id).emit("@conversationSeen", {
+  public sendConversationSeenEvent(
+    conversation: IConversation,
+    socketThatTriggers?: Socket
+  ): void {
+    const broadcastToUse = socketThatTriggers?.broadcast ?? this.io.sockets;
+
+    broadcastToUse.to(conversation.id).emit("@conversationSeen", {
       conversation: conversation,
     });
   }
 
   public sendMessageCreationEvent(
     conversation: IConversation,
-    message: IMessage
+    message: IMessage,
+    socketThatTriggers?: Socket
   ): void {
-    this.io.to(conversation.id).emit("@newMessage", {
+    const broadcastToUse = socketThatTriggers?.broadcast ?? this.io.sockets;
+
+    broadcastToUse.to(conversation.id).emit("@newMessage", {
       message: message,
     });
   }
 
   public sendMessageEditingEvent(
     conversation: IConversation,
-    message: IMessage
+    message: IMessage,
+    socketThatTriggers?: Socket
   ): void {
-    this.io.to(conversation.id).emit("@messageEdited", {
+    const broadcastToUse = socketThatTriggers?.broadcast ?? this.io.sockets;
+
+    broadcastToUse.to(conversation.id).emit("@messageEdited", {
       message: message,
     });
   }
 
   public sendMessageReactionAddingEvent(
     conversation: IConversation,
-    message: IMessage
+    message: IMessage,
+    socketThatTriggers?: Socket
   ): void {
-    this.io.to(conversation.id).emit("@reactionAdded", {
+    const broadcastToUse = socketThatTriggers?.broadcast ?? this.io.sockets;
+
+    broadcastToUse.to(conversation.id).emit("@reactionAdded", {
       message: message,
     });
   }
 
   public sendMessageDeletingEvent(
     conversation: IConversation,
-    message: IMessage
+    message: IMessage,
+    socketThatTriggers?: Socket
   ): void {
-    this.io.to(conversation.id).emit("@messageDeleted", {
+    const broadcastToUse = socketThatTriggers?.broadcast ?? this.io.sockets;
+
+    broadcastToUse.to(conversation.id).emit("@messageDeleted", {
       message: message,
     });
   }

@@ -14,6 +14,7 @@ import { seeConversationMessageJoiSchema } from "./joi-schema/SeeConversationMes
 import { newConversationMessageJoiSchema } from "./joi-schema/NewConversationMessageJoiSchema";
 import { RequestDataHelper } from "../helpers/RequestDataHelper";
 import { isValidObjectId } from "mongoose";
+import { Socket } from "socket.io";
 
 export class ConversationController extends Controller {
   public constructor(app: Application) {
@@ -48,6 +49,8 @@ export class ConversationController extends Controller {
     response: Response
   ): Promise<void> {
     const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
+    const currentSocket: Socket | undefined =
+      RequestDataHelper.getCurrentSocket(request);
 
     const concernedUsersIds: Array<string> = request.body.concernedUsersIds;
 
@@ -84,7 +87,8 @@ export class ConversationController extends Controller {
 
     request.app.locals.socketController.sendConversationCreationEvent(
       concernedUsersIds,
-      newConversation
+      newConversation,
+      currentSocket
     );
 
     response.status(200).send({
@@ -111,6 +115,8 @@ export class ConversationController extends Controller {
     response: Response
   ): Promise<void> {
     const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
+    const currentSocket: Socket | undefined =
+      RequestDataHelper.getCurrentSocket(request);
 
     const concernedConversation: IConversation =
       await RequestDataHelper.getConcernedConversation(request);
@@ -124,7 +130,8 @@ export class ConversationController extends Controller {
     await request.app.locals.database.deleteConversation(concernedConversation);
 
     request.app.locals.socketController.sendConversationDeletingEvent(
-      concernedConversation
+      concernedConversation,
+      currentSocket
     );
 
     response.status(200).send({
@@ -137,6 +144,8 @@ export class ConversationController extends Controller {
     response: Response
   ): Promise<void> {
     const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
+    const currentSocket: Socket | undefined =
+      RequestDataHelper.getCurrentSocket(request);
 
     const concernedConversation: IConversation =
       await RequestDataHelper.getConcernedConversation(request);
@@ -169,7 +178,8 @@ export class ConversationController extends Controller {
     );
 
     request.app.locals.socketController.sendConversationSeenEvent(
-      concernedConversation
+      concernedConversation,
+      currentSocket
     );
 
     response.status(200).send({
@@ -182,6 +192,8 @@ export class ConversationController extends Controller {
     response: Response
   ): Promise<void> {
     const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
+    const currentSocket: Socket | undefined =
+      RequestDataHelper.getCurrentSocket(request);
 
     const concernedConversation: IConversation =
       await RequestDataHelper.getConcernedConversation(request);
@@ -211,7 +223,8 @@ export class ConversationController extends Controller {
 
     request.app.locals.socketController.sendMessageCreationEvent(
       concernedConversation,
-      newMessage
+      newMessage,
+      currentSocket
     );
 
     response.status(200).send({

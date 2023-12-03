@@ -9,8 +9,25 @@ import {
 import { IConversation } from "../database/models/ConversationModel";
 import { IMessage } from "../database/models/MessageModel";
 import { isValidObjectId } from "mongoose";
+import { Socket } from "socket.io";
 
 export class RequestDataHelper {
+  public static getCurrentSocket(request: Request): Socket | undefined {
+    const currentUser: IUser | undefined = request.currentUser;
+
+    const currentSocketId: string | undefined =
+      request.app.locals.socketController.userIdSocketIdMap.get(
+        currentUser?.id
+      );
+
+    if (!currentSocketId) return;
+
+    const currentSocket: Socket | undefined =
+      request.app.locals.socketController.getSocket(currentSocketId);
+
+    return currentSocket;
+  }
+
   public static getCurrentUser(request: Request): IUser {
     const currentUser: IUser | undefined = request.currentUser;
 

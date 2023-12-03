@@ -81,7 +81,19 @@ export class Database {
   public getConversationById(
     conversationId: MongooseID
   ): Promise<IConversation | null> {
-    return ConversationModel.findById(conversationId);
+    return ConversationModel.findById(conversationId)
+      .populate({
+        path: "messages",
+        populate: {
+          path: "from",
+        },
+        match: {
+          deleted: false,
+        },
+      })
+      .populate({
+        path: "participants",
+      });
   }
 
   public async createConversation(conversation: IConversation): Promise<void> {
@@ -94,6 +106,7 @@ export class Database {
 
   public async updateConversation(conversation: IConversation): Promise<void> {
     conversation.lastUpdate = new Date();
+    conversation.seen = new Map();
 
     await conversation.save();
   }

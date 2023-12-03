@@ -10,6 +10,7 @@ import { joiValidatorMiddleware } from "../middlewares/JoiValidatorMiddleware";
 import { newMessageContentJoiSchema } from "./joi-schema/NewMessageContentJoiSchema";
 import { RequestDataHelper } from "../helpers/RequestDataHelper";
 import { messageReactionJoiSchema } from "./joi-schema/MessageReactionJoiSchema";
+import { Socket } from "socket.io";
 
 export class MessageController extends Controller {
   public constructor(app: Application) {
@@ -35,6 +36,8 @@ export class MessageController extends Controller {
     response: Response
   ): Promise<void> {
     const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
+    const currentSocket: Socket | undefined =
+      RequestDataHelper.getCurrentSocket(request);
 
     const concernedMessage: IMessage =
       await RequestDataHelper.getConcernedMessage(request);
@@ -66,7 +69,8 @@ export class MessageController extends Controller {
 
     request.app.locals.socketController.sendMessageCreationEvent(
       convernedMessageConversation,
-      concernedMessage
+      concernedMessage,
+      currentSocket
     );
 
     response.status(200).send({
@@ -79,6 +83,8 @@ export class MessageController extends Controller {
     response: Response
   ): Promise<void> {
     const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
+    const currentSocket: Socket | undefined =
+      RequestDataHelper.getCurrentSocket(request);
 
     const concernedMessage: IMessage =
       await RequestDataHelper.getConcernedMessage(request);
@@ -111,7 +117,8 @@ export class MessageController extends Controller {
 
     request.app.locals.socketController.sendMessageReactionAddingEvent(
       convernedMessageConversation,
-      concernedMessage
+      concernedMessage,
+      currentSocket
     );
 
     response.status(200).send({
@@ -124,6 +131,8 @@ export class MessageController extends Controller {
     response: Response
   ): Promise<void> {
     const currentUser: IUser = RequestDataHelper.getCurrentUser(request);
+    const currentSocket: Socket | undefined =
+      RequestDataHelper.getCurrentSocket(request);
 
     const concernedMessage: IMessage =
       await RequestDataHelper.getConcernedMessage(request);
@@ -149,7 +158,8 @@ export class MessageController extends Controller {
 
     request.app.locals.socketController.sendMessageDeletingEvent(
       convernedMessageConversation,
-      concernedMessage
+      concernedMessage,
+      currentSocket
     );
 
     response.status(200).send({
